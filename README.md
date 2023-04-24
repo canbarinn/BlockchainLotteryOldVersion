@@ -1,2 +1,2 @@
-# BlockchainLotteryOldVersion
-blockchain lottery
+# Lottery
+ DecentralizedA Application
