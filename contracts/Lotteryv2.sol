@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 // STORAGE SYSYTEM IDEA: you can have lottery no getter which determines lottery no and do the necessary adjustments accordingly. 
 // TIER will be selected in the buy ticket fuinction, you will need to add that. 
 
+
 contract DALottery {
     uint ticketNoCounter;
     uint lotteryNoCounter = 1;
@@ -169,7 +170,7 @@ contract DALottery {
         lotteryNoCounter = lottery_no;
     }
 
-    function buyTicket(bytes32 hash_rnd_number) public {
+    function buyTicket(bytes32 hash_rnd_number, TicketTier tier) public {
         ticketNoCounter += 1;
         tickets[msg.sender][lotteryNoCounter].push(
             Ticket(
