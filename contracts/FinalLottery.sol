@@ -3,7 +3,12 @@ pragma solidity >=0.8.2 <0.9.0;
 
 contract DALottery {
     uint ticketNoCounter;
-    uint lotteryNoCounter = 1;
+    uint lotteryNoCounter;
+    uint lotteryDeploymentTime = block.timestamp;
+
+    constructor() {
+        lotteryDeploymentTime = block.timestamp;
+    }
 
     enum TicketTier {
         Full,
@@ -17,7 +22,7 @@ contract DALottery {
     mapping(uint => LotteryInfo) lotteryInfos; //lotteryNo => LotteryInfo
 
     struct Ticket {
-        uint ticketNo;
+        uint ticketNo;  
         uint lotteryNo;
         bytes32 ticketHash;
         uint ticketTimestamp;
@@ -48,17 +53,18 @@ contract DALottery {
     }
 
     function buyTicket(bytes32 hash_rnd_number, int tier) public {
-        require(tier = 1 || tier = 2 ||  tier = 3, "Wrong Input");
+        TicketTier ticketTier;
+        require(tier == 1 || tier == 2 ||  tier == 3, "Wrong Input");
         ticketNoCounter += 1;
         if(tier == 1) {
-                    ticketTier = TicketTier.Full
+                    ticketTier = TicketTier.Full;
                 }
                 else if(tier == 2) {
-                    ticketTier = TicketTier.Half
+                    ticketTier = TicketTier.Half;
 
                 }
                 else if(tier == 3) {
-                    ticketTier = TicketTier.Quarter
+                    ticketTier = TicketTier.Quarter;
                 }   
     
         tickets[msg.sender][lotteryNoCounter].push(
@@ -68,9 +74,23 @@ contract DALottery {
                 hash_rnd_number,
                 block.timestamp,
                 0,
-                TicketTier = tier
+                ticketTier
             )
         );
         lotteryInfos[lotteryNoCounter].ticketNosInLottery.push(ticketNoCounter);
     }
+
+
+    function collectTicketRefund(uint ticket_no) public {
+
+}
+    function findTicketInfosFromNo(uint ticket_no)  public view returns(uint, uint){
+    for(uint lottery_no=0; lottery_no<lotteryNoCounter+1; lottery_no++) {
+        for (uint index=0; index<tickets[msg.sender][lottery_no].length; index++) {
+            if(tickets[msg.sender][lottery_no][index].ticketNo == ticket_no){
+                return(lottery_no,index);
+            }
+        } 
+    }
+}
 }
