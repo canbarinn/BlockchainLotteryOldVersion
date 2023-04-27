@@ -19,6 +19,7 @@ contract FinalLottery {
     mapping(address => mapping(uint => Ticket[])) tickets; //address => lotteryNo => Ticket
     mapping(address => uint256) public balance;
     mapping(uint => LotteryInfo) lotteryInfos; //lotteryNo => LotteryInfo
+    mapping(uint => uint) lotteryBank;
 
     struct Ticket {
         uint ticketNo;
@@ -92,14 +93,10 @@ contract FinalLottery {
             )
         );
         lotteryInfos[lotteryNo].ticketNosInLottery.push(ticketNoCounter);
+        lotteryBank[lotteryNo] += getamount(ticketTier);
     }
 
-    function collectTicketRefund(uint ticket_no) public {
-        uint lottery_no;
-        uint ticket_index;
-        
-        (lottery_no, ticket_index) = findTicketInfosFromNo(ticket_no);
-        TicketTier tier = tickets[msg.sender][lottery_no][ticket_index].ticketTier;
+    function getamount(TicketTier tier) public pure returns(uint) {
         uint amount;
         if (tier == TicketTier.Full) {
             amount = 8;
@@ -108,8 +105,20 @@ contract FinalLottery {
         } else if (tier == TicketTier.Full) {
             amount = 2;
         }
+        return amount;
+    }
+
+    function collectTicketRefund(uint ticket_no) public {
+        uint lottery_no;
+        uint ticket_index;
+        
+        (lottery_no, ticket_index) = findTicketInfosFromNo(ticket_no);
+        TicketTier tier = tickets[msg.sender][lottery_no][ticket_index].ticketTier;
+        uint amount = getamount(tier);
         balance[msg.sender] += amount;
+        lotteryBank[lottery_no] -= amount;
         tickets[msg.sender][lottery_no][ticket_index].active = false;
+
 }
 
     function getIthOwnedTicketNo(uint i,uint lottery_no) public view returns(uint,uint8 status){
