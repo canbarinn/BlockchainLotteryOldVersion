@@ -19,7 +19,6 @@ contract FinalLottery {
     mapping(address => mapping(uint => Ticket[])) tickets; //address => lotteryNo => Ticket
     mapping(address => uint256) public balance;
     mapping(uint => LotteryInfo) lotteryInfos; //lotteryNo => LotteryInfo
-    mapping(uint => uint) lotteryBank;
 
     struct Ticket {
         uint ticketNo;
@@ -34,8 +33,8 @@ contract FinalLottery {
     struct LotteryInfo {
         uint lotteryNo;
         uint startTimestamp;
-        uint[] winningTickets; //0 = full ticket, 1 = half ticket, 2 = quarter ticket
-        uint[] ticketNosInLottery;
+        uint[] winningTickets; // safes index of the three winning tickets //0 = first price, 1 = second price, 2 = third price
+        uint[] ticketNosInLottery; //
         uint lotteryBalance;
     }
 
@@ -49,7 +48,7 @@ contract FinalLottery {
         TicketTier ticketTier
     );
 
-    event AmountOfPrize(string prizeName,uint prize); 
+    event AmountOfPrize(string prizeName, uint prize);
 
     function lotteryNoCalculator() public returns (uint) {
         uint currentTime = block.timestamp;
@@ -97,10 +96,10 @@ contract FinalLottery {
             )
         );
         lotteryInfos[lotteryNo].ticketNosInLottery.push(ticketNoCounter);
-        lotteryBank[lotteryNo] += getamount(ticketTier);
+        lotteryInfos[lotteryNo].lotteryBalance += getamount(ticketTier);
     }
 
-    function getamount(TicketTier tier) public pure returns(uint) {
+    function getamount(TicketTier tier) public pure returns (uint) {
         uint amount;
         if (tier == TicketTier.Full) {
             amount = 8;
@@ -115,23 +114,26 @@ contract FinalLottery {
     function collectTicketRefund(uint ticket_no) public {
         uint lottery_no;
         uint ticket_index;
-        
+
         (lottery_no, ticket_index) = findTicketInfosFromNo(ticket_no);
-        TicketTier tier = tickets[msg.sender][lottery_no][ticket_index].ticketTier;
+        TicketTier tier = tickets[msg.sender][lottery_no][ticket_index]
+            .ticketTier;
         uint amount = getamount(tier);
         balance[msg.sender] += amount;
-        lotteryBank[lottery_no] -= amount;
+        lotteryInfos[lottery_no].lotteryBalance -= amount;
         tickets[msg.sender][lottery_no][ticket_index].active = false;
+    }
 
-}
-
-    function getIthOwnedTicketNo(uint i,uint lottery_no) public view returns(uint,uint8 status){
+    function getIthOwnedTicketNo(
+        uint i,
+        uint lottery_no
+    ) public view returns (uint, uint8 status) {
         Ticket memory targetTicket;
         targetTicket = tickets[msg.sender][lottery_no][i];
         uint ticketNo = targetTicket.ticketNo;
         uint8 ticketStatus = targetTicket.status;
         return (ticketNo, ticketStatus);
-}
+    }
 
     function findTicketInfosFromNo(uint ticket_no) public returns (uint, uint) {
         uint lotteryNoCounter = lotteryNoCalculator();
@@ -187,7 +189,9 @@ contract FinalLottery {
             revert("not enough tickets");
             // make the tickets refundable here
         }
-        uint numberofTickets = lotteryInfos[lottery_no].ticketNosInLottery.length;
+        uint numberofTickets = lotteryInfos[lottery_no]
+            .ticketNosInLottery
+            .length;
         uint index1 = getRandomNumber() %
             lotteryInfos[lottery_no].ticketNosInLottery.length;
         uint index2 = getRandomNumber() %
@@ -195,44 +199,60 @@ contract FinalLottery {
         uint index3 = getRandomNumber() %
             lotteryInfos[lottery_no].ticketNosInLottery.length;
 
-            while((index1==index2) || (index2 == index3) || (index1 == index3)) {
-
-            if(index1 == index2) {
-                if (index1 != numberofTickets-1){
-                    index1 = index2+1;
-                }else {
+        while ((index1 == index2) || (index2 == index3) || (index1 == index3)) {
+            if (index1 == index2) {
+                if (index1 != numberofTickets - 1) {
+                    index1 = index2 + 1;
+                } else {
                     index1 = 0;
                 }
-            } else if(index2 == index3){
-                if (index2 != numberofTickets-1){
-                    index2 = index3+1;
-                }else {
+            } else if (index2 == index3) {
+                if (index2 != numberofTickets - 1) {
+                    index2 = index3 + 1;
+                } else {
                     index2 = 0;
                 }
-                
-            } else if(index1 == index3) {
-                if (index1 != numberofTickets-1){
-                    index1 = index3+1;
-                }else {
+            } else if (index1 == index3) {
+                if (index1 != numberofTickets - 1) {
+                    index1 = index3 + 1;
+                } else {
                     index1 = 0;
                 }
-        }
+            }
 
-        lotteryInfos[lottery_no].winningTickets.push(index1);
-        lotteryInfos[lottery_no].winningTickets.push(index2);
-        lotteryInfos[lottery_no].winningTickets.push(index3);
-    } }
+            lotteryInfos[lottery_no].winningTickets.push(index1);
+            lotteryInfos[lottery_no].winningTickets.push(index2);
+            lotteryInfos[lottery_no].winningTickets.push(index3);
+        }
+    }
+
+    function getIthWinningTicket(
+        uint i,
+        uint lottery_no
+    ) public returns (uint ticket_no, uint amount) {
+        uint ticket_index = lotteryInfos[lottery_no].winningTickets[i];
+        ticket_no = lotteryInfos[lottery_no].ticketNosInLottery[ticket_index];
+
+        (, ticket_index) = findTicketInfosFromNo(ticket_no);
+
+        TicketTier tier = tickets[msg.sender][lottery_no][ticket_index]
+            .ticketTier;
+
+        amount = getamount(tier);
+
+        return (ticket_no, amount);
+    }
 
     function checkIfTicketWon(
         uint lottery_no,
         uint ticket_no
-    ) public returns(uint){
+    ) public returns (uint) {
         if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
             pickWinner(lottery_no);
         }
         uint prize;
         string memory prizeName;
-    
+
         uint firstPrizeWinnerTicketNo = lotteryInfos[lottery_no]
             .ticketNosInLottery[lotteryInfos[lottery_no].winningTickets[0]];
         uint secondPrizeWinnerTicketNo = lotteryInfos[lottery_no]
@@ -310,8 +330,13 @@ contract FinalLottery {
         } else {
             prize = 0;
         }
-        emit AmountOfPrize (prizeName, prize);
+        emit AmountOfPrize(prizeName, prize);
         return prize;
     }
 
+    function getTotalLotteryMoneyCollected(
+        uint lottery_no
+    ) public view returns (uint amount) {
+        return lotteryInfos[lottery_no].lotteryBalance;
+    }
 }
