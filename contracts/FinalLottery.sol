@@ -38,13 +38,17 @@ contract FinalLottery {
         uint lotteryBalance;
     }
 
-    event TicketInfo(        uint ticketNo,
+    event TicketInfo(
+        uint ticketNo,
         uint lotteryNo,
         bytes32 ticketHash,
         uint ticketTimestamp,
         uint8 status,
         bool active,
-        TicketTier ticketTier);
+        TicketTier ticketTier
+    );
+
+    event AmountOfPrize(string prizeName,uint prize); 
 
     function lotteryNoCalculator() public returns (uint) {
         uint currentTime = block.timestamp;
@@ -144,12 +148,10 @@ contract FinalLottery {
         );
     }
 
-    function getTicketInfo(
-        uint ticket_number
-    ) public  {
+    function getTicketInfo(uint ticket_number) public {
         (uint lottery_no, uint index) = findTicketInfosFromNo(ticket_number);
 
-        emit TicketInfo (
+        emit TicketInfo(
             tickets[msg.sender][lottery_no][index].ticketNo,
             tickets[msg.sender][lottery_no][index].lotteryNo,
             tickets[msg.sender][lottery_no][index].ticketHash,
@@ -160,44 +162,140 @@ contract FinalLottery {
         );
     }
 
-    function getRandomNumber() public view returns(uint) {
+    function getRandomNumber() public view returns (uint) {
         return uint(keccak256(abi.encodePacked(block.timestamp)));
     }
 
     function pickWinner(uint lottery_no) private {
-        
-      
+        if (lotteryInfos[lottery_no].ticketNosInLottery.length <= 3) {
+            revert("not enough tickets");
+            // make the tickets refundable here
+        }
+        uint numberofTickets = lotteryInfos[lottery_no].ticketNosInLottery.length;
+        uint index1 = getRandomNumber() %
+            lotteryInfos[lottery_no].ticketNosInLottery.length;
+        uint index2 = getRandomNumber() %
+            lotteryInfos[lottery_no].ticketNosInLottery.length;
+        uint index3 = getRandomNumber() %
+            lotteryInfos[lottery_no].ticketNosInLottery.length;
 
-        uint index1 = getRandomNumber() % lotteryInfos[lottery_no].ticketNosInLottery.length;
-        uint index2 = getRandomNumber() % lotteryInfos[lottery_no].ticketNosInLottery.length;
-        uint index3 = getRandomNumber() % lotteryInfos[lottery_no].ticketNosInLottery.length;
-        
-        while((index1==index2) || (index2 == index3) || (index1 == index3)) {
+            while((index1==index2) || (index2 == index3) || (index1 == index3)) {
+
             if(index1 == index2) {
-                index1 = index2+1;
+                if (index1 != numberofTickets-1){
+                    index1 = index2+1;
+                }else {
+                    index1 = 0;
+                }
             } else if(index2 == index3){
-                index2 = index3+1;
+                if (index2 != numberofTickets-1){
+                    index2 = index3+1;
+                }else {
+                    index2 = 0;
+                }
+                
             } else if(index1 == index3) {
-                index1 = index3+1;
-            }
+                if (index1 != numberofTickets-1){
+                    index1 = index3+1;
+                }else {
+                    index1 = 0;
+                }
         }
 
         lotteryInfos[lottery_no].winningTickets.push(index1);
         lotteryInfos[lottery_no].winningTickets.push(index2);
         lotteryInfos[lottery_no].winningTickets.push(index3);
+    } }
 
-
-    }
-
-    function checkIfTicketWon(uint lottery_no, uint ticket_no) public view returns(uint) {
-        if(!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
-
+    function checkIfTicketWon(
+        uint lottery_no,
+        uint ticket_no
+    ) public returns(uint){
+        if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
+            pickWinner(lottery_no);
         }
-
-
-    }
-
+        uint prize;
+        string memory prizeName;
     
+        uint firstPrizeWinnerTicketNo = lotteryInfos[lottery_no]
+            .ticketNosInLottery[lotteryInfos[lottery_no].winningTickets[0]];
+        uint secondPrizeWinnerTicketNo = lotteryInfos[lottery_no]
+            .ticketNosInLottery[lotteryInfos[lottery_no].winningTickets[1]];
+        uint thirdPrizeWinnerTicketNo = lotteryInfos[lottery_no]
+            .ticketNosInLottery[lotteryInfos[lottery_no].winningTickets[2]];
 
+        (, uint index) = findTicketInfosFromNo(ticket_no);
+        if (ticket_no == firstPrizeWinnerTicketNo) {
+            if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Full
+            ) {
+                prize = lotteryInfos[lottery_no].lotteryBalance / 2;
+                prizeName = "Full First";
+            } else if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Half
+            ) {
+                prize = lotteryInfos[lottery_no].lotteryBalance / 4;
+                prizeName = "Half First";
+            } else if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Quarter
+            ) {
+                prize = lotteryInfos[lottery_no].lotteryBalance / 8;
+                prizeName = "Quarter First";
+            } else {
+                revert("Invalid operation.");
+            }
+        } else if (ticket_no == secondPrizeWinnerTicketNo) {
+            if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Full
+            ) {
+                prizeName = "Full Second";
+                prize = lotteryInfos[lottery_no].lotteryBalance / 4;
+            } else if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Half
+            ) {
+                prizeName = "Half Second";
+                prize = lotteryInfos[lottery_no].lotteryBalance / 8;
+            } else if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Quarter
+            ) {
+                prizeName = "Quarter Second";
+                prize = lotteryInfos[lottery_no].lotteryBalance / 16;
+            } else {
+                revert("Invalid operation.");
+            }
+        } else if (ticket_no == thirdPrizeWinnerTicketNo) {
+            if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Full
+            ) {
+                prizeName = "Full Third";
+                prize = lotteryInfos[lottery_no].lotteryBalance / 8;
+            } else if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Half
+            ) {
+                prizeName = "Half Third";
+                prize = lotteryInfos[lottery_no].lotteryBalance / 16;
+            } else if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Quarter
+            ) {
+                prizeName = "Quarter Third";
+                prize = lotteryInfos[lottery_no].lotteryBalance / 32;
+            } else {
+                revert("Invalid operation.");
+            }
+        } else {
+            prize = 0;
+        }
+        emit AmountOfPrize (prizeName, prize);
+        return prize;
+    }
 
 }

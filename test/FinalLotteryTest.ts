@@ -30,12 +30,25 @@ describe("Lock", function () {
     });
 
     it("We can buy ticket", async function () {
+      await Lottery.buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 2);
       await Lottery.buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 3);
-      const timestamp = (await ethers.provider.getBlock(await ethers.provider.getBlockNumber())).timestamp;
-      console.log("random number", await Lottery.getRandomNumber());
-      await expect(await Lottery.getTicketInfo(1))
-        .to.emit(Lottery, "TicketInfo")
-        .withArgs(1, 1, "0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", timestamp, 0, true, 2);
-    });
+      await Lottery.buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 1);
+      await Lottery.buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 3);
+
+      const tx = await Lottery.checkIfTicketWon(1, 1);
+      const tx2 = await Lottery.checkIfTicketWon(1, 2);
+      const tx3 = await Lottery.checkIfTicketWon(1, 3);
+      const tx4 = await Lottery.checkIfTicketWon(1, 4);
+    
+      
+      // expect(await tx).to.be.eq(66);
+      // expect(await tx2).to.be.eq(66);
+      // expect(await tx3).to.be.eq(66);
+      // expect(await tx4).to.be.eq(66);
+
+      await expect(await tx).to.emit(Lottery, "AmountOfPrize").withArgs("prizename",0);
+  
+    
+    })
   });
 });
