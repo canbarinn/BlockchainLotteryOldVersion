@@ -19,7 +19,6 @@ contract FinalLottery {
     mapping(address => mapping(uint => Ticket[])) tickets; //address => lotteryNo => Ticket
     mapping(address => uint256) public balance;
     mapping(uint => LotteryInfo) lotteryInfos; //lotteryNo => LotteryInfo
-    mapping(uint => uint) lotteryBank;
 
     struct Ticket {
         uint ticketNo;
@@ -34,12 +33,13 @@ contract FinalLottery {
     struct LotteryInfo {
         uint lotteryNo;
         uint startTimestamp;
-        uint[] winningTickets; //0 = full ticket, 1 = half ticket, 2 = quarter ticket
-        uint[] ticketNosInLottery;
+        uint[] winningTickets; // safes index of the three winning tickets //0 = first price, 1 = second price, 2 = third price
+        uint[] ticketNosInLottery; //
         uint lotteryBalance;
     }
 
-    event TicketInfo(        uint ticketNo,
+    event TicketInfo(        
+        uint ticketNo,
         uint lotteryNo,
         bytes32 ticketHash,
         uint ticketTimestamp,
@@ -93,7 +93,7 @@ contract FinalLottery {
             )
         );
         lotteryInfos[lotteryNo].ticketNosInLottery.push(ticketNoCounter);
-        lotteryBank[lotteryNo] += getamount(ticketTier);
+        lotteryInfos[lotteryNo].lotteryBalance += getamount(ticketTier);
     }
 
     function getamount(TicketTier tier) public pure returns(uint) {
@@ -116,7 +116,7 @@ contract FinalLottery {
         TicketTier tier = tickets[msg.sender][lottery_no][ticket_index].ticketTier;
         uint amount = getamount(tier);
         balance[msg.sender] += amount;
-        lotteryBank[lottery_no] -= amount;
+        lotteryInfos[lottery_no].lotteryBalance -= amount;
         tickets[msg.sender][lottery_no][ticket_index].active = false;
 
 }
@@ -181,21 +181,32 @@ contract FinalLottery {
     }
 
     function pickWinner(uint lottery_no) private {
-        
-      
-
+        uint numberofTickets = lotteryInfos[lottery_no].ticketNosInLottery.length;
         uint index1 = getRandomNumber() % lotteryInfos[lottery_no].ticketNosInLottery.length;
         uint index2 = getRandomNumber() % lotteryInfos[lottery_no].ticketNosInLottery.length;
         uint index3 = getRandomNumber() % lotteryInfos[lottery_no].ticketNosInLottery.length;
         
         while((index1==index2) || (index2 == index3) || (index1 == index3)) {
+
             if(index1 == index2) {
-                index1 = index2+1;
+                if (index1 != numberofTickets-1){
+                    index1 = index2+1;
+                }else {
+                    index1 = 0;
+                }
             } else if(index2 == index3){
-                index2 = index3+1;
+                if (index2 != numberofTickets-1){
+                    index2 = index3+1;
+                }else {
+                    index2 = 0;
+                }
+                
             } else if(index1 == index3) {
-                index1 = index3+1;
-            }
+                if (index1 != numberofTickets-1){
+                    index1 = index3+1;
+                }else {
+                    index1 = 0;
+                }
         }
 
         lotteryInfos[lottery_no].winningTickets.push(index1);
@@ -203,6 +214,7 @@ contract FinalLottery {
         lotteryInfos[lottery_no].winningTickets.push(index3);
 
 
+    }
     }
 
     function checkIfTicketWon(uint lottery_no, uint ticket_no) public view returns(uint) {
@@ -212,8 +224,24 @@ contract FinalLottery {
 
 
     }
+    function getIthWinningTicket(uint i, uint lottery_no) public  returns (uint ticket_no, uint amount) {
+        
+        uint ticket_index = lotteryInfos[lottery_no].winningTickets[i];
+        ticket_no = lotteryInfos[lottery_no].ticketNosInLottery[ticket_index];
 
+        (, ticket_index) = findTicketInfosFromNo(ticket_no);
+
+        TicketTier tier = tickets[msg.sender][lottery_no][ticket_index].ticketTier;
+        
+        amount = getamount(tier);
+
+        return (ticket_no, amount);
+    }
     
 
-
+    function getTotalLotteryMoneyCollected(uint lottery_no) public view returns (uint amount){
+        return lotteryInfos[lottery_no].lotteryBalance;
+    }
 }
+
+
