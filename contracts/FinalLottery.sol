@@ -4,6 +4,7 @@ pragma solidity >=0.8.2 <0.9.0;
 contract FinalLottery {
     uint ticketNoCounter;
     uint lotteryDeploymentTime = block.timestamp;
+    uint lotteryBalance;
 
     constructor() {
         lotteryDeploymentTime = block.timestamp;
@@ -35,7 +36,6 @@ contract FinalLottery {
         uint startTimestamp;
         uint[] winningTickets; // safes index of the three winning tickets //0 = first price, 1 = second price, 2 = third price
         uint[] ticketNosInLottery; //
-        uint lotteryBalance;
     }
 
     event TicketInfo(
@@ -96,7 +96,7 @@ contract FinalLottery {
             )
         );
         lotteryInfos[lotteryNo].ticketNosInLottery.push(ticketNoCounter);
-        lotteryInfos[lotteryNo].lotteryBalance += getamount(ticketTier);
+        lotteryBalance += getamount(ticketTier);
     }
 
     function getamount(TicketTier tier) public pure returns (uint) {
@@ -119,8 +119,15 @@ contract FinalLottery {
         TicketTier tier = tickets[msg.sender][lottery_no][ticket_index]
             .ticketTier;
         uint amount = getamount(tier);
+        if (tier == TicketTier.Full) {
+            amount = 8;
+        } else if (tier == TicketTier.Half) {
+            amount = 4;
+        } else if (tier == TicketTier.Full) {
+            amount = 2;
+        }
         balance[msg.sender] += amount;
-        lotteryInfos[lottery_no].lotteryBalance -= amount;
+        lotteryBalance -= amount;
         tickets[msg.sender][lottery_no][ticket_index].active = false;
     }
 
@@ -266,19 +273,19 @@ contract FinalLottery {
                 tickets[msg.sender][lottery_no][index].ticketTier ==
                 TicketTier.Full
             ) {
-                prize = lotteryInfos[lottery_no].lotteryBalance / 2;
+                prize = lotteryBalance / 2;
                 prizeName = "Full First";
             } else if (
                 tickets[msg.sender][lottery_no][index].ticketTier ==
                 TicketTier.Half
             ) {
-                prize = lotteryInfos[lottery_no].lotteryBalance / 4;
+                prize = lotteryBalance / 4;
                 prizeName = "Half First";
             } else if (
                 tickets[msg.sender][lottery_no][index].ticketTier ==
                 TicketTier.Quarter
             ) {
-                prize = lotteryInfos[lottery_no].lotteryBalance / 8;
+                prize = lotteryBalance / 8;
                 prizeName = "Quarter First";
             } else {
                 revert("Invalid operation.");
@@ -289,19 +296,19 @@ contract FinalLottery {
                 TicketTier.Full
             ) {
                 prizeName = "Full Second";
-                prize = lotteryInfos[lottery_no].lotteryBalance / 4;
+                prize = lotteryBalance / 4;
             } else if (
                 tickets[msg.sender][lottery_no][index].ticketTier ==
                 TicketTier.Half
             ) {
                 prizeName = "Half Second";
-                prize = lotteryInfos[lottery_no].lotteryBalance / 8;
+                prize = lotteryBalance / 8;
             } else if (
                 tickets[msg.sender][lottery_no][index].ticketTier ==
                 TicketTier.Quarter
             ) {
                 prizeName = "Quarter Second";
-                prize = lotteryInfos[lottery_no].lotteryBalance / 16;
+                prize = lotteryBalance / 16;
             } else {
                 revert("Invalid operation.");
             }
@@ -311,19 +318,19 @@ contract FinalLottery {
                 TicketTier.Full
             ) {
                 prizeName = "Full Third";
-                prize = lotteryInfos[lottery_no].lotteryBalance / 8;
+                prize = lotteryBalance / 8;
             } else if (
                 tickets[msg.sender][lottery_no][index].ticketTier ==
                 TicketTier.Half
             ) {
                 prizeName = "Half Third";
-                prize = lotteryInfos[lottery_no].lotteryBalance / 16;
+                prize = lotteryBalance / 16;
             } else if (
                 tickets[msg.sender][lottery_no][index].ticketTier ==
                 TicketTier.Quarter
             ) {
                 prizeName = "Quarter Third";
-                prize = lotteryInfos[lottery_no].lotteryBalance / 32;
+                prize = lotteryBalance / 32;
             } else {
                 revert("Invalid operation.");
             }
@@ -337,6 +344,6 @@ contract FinalLottery {
     function getTotalLotteryMoneyCollected(
         uint lottery_no
     ) public view returns (uint amount) {
-        return lotteryInfos[lottery_no].lotteryBalance;
+        return lotteryBalance;
     }
 }
