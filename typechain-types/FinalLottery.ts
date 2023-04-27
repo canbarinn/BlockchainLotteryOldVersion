@@ -14,7 +14,11 @@ import type {
   Signer,
   utils,
 } from "ethers";
-import type { FunctionFragment, Result } from "@ethersproject/abi";
+import type {
+  FunctionFragment,
+  Result,
+  EventFragment,
+} from "@ethersproject/abi";
 import type { Listener, Provider } from "@ethersproject/providers";
 import type {
   TypedEventFilter,
@@ -32,6 +36,7 @@ export interface FinalLotteryInterface extends utils.Interface {
     "depositEther()": FunctionFragment;
     "findTicketInfosFromNo(uint256)": FunctionFragment;
     "getLastOwnedTicketNo(uint256)": FunctionFragment;
+    "getTicketInfo(uint256)": FunctionFragment;
     "lotteryNoCalculator()": FunctionFragment;
     "withdrawEther(uint256)": FunctionFragment;
   };
@@ -44,6 +49,7 @@ export interface FinalLotteryInterface extends utils.Interface {
       | "depositEther"
       | "findTicketInfosFromNo"
       | "getLastOwnedTicketNo"
+      | "getTicketInfo"
       | "lotteryNoCalculator"
       | "withdrawEther"
   ): FunctionFragment;
@@ -70,6 +76,10 @@ export interface FinalLotteryInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "getLastOwnedTicketNo",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getTicketInfo",
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
@@ -100,6 +110,10 @@ export interface FinalLotteryInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "getTicketInfo",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "lotteryNoCalculator",
     data: BytesLike
   ): Result;
@@ -108,8 +122,28 @@ export interface FinalLotteryInterface extends utils.Interface {
     data: BytesLike
   ): Result;
 
-  events: {};
+  events: {
+    "TicketInfo(uint256,uint256,bytes32,uint256,uint8,bool,uint8)": EventFragment;
+  };
+
+  getEvent(nameOrSignatureOrTopic: "TicketInfo"): EventFragment;
 }
+
+export interface TicketInfoEventObject {
+  ticketNo: BigNumber;
+  lotteryNo: BigNumber;
+  ticketHash: string;
+  ticketTimestamp: BigNumber;
+  status: number;
+  active: boolean;
+  ticketTier: number;
+}
+export type TicketInfoEvent = TypedEvent<
+  [BigNumber, BigNumber, string, BigNumber, number, boolean, number],
+  TicketInfoEventObject
+>;
+
+export type TicketInfoEventFilter = TypedEventFilter<TicketInfoEvent>;
 
 export interface FinalLottery extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
@@ -168,6 +202,11 @@ export interface FinalLottery extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber, number]>;
 
+    getTicketInfo(
+      ticket_number: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     lotteryNoCalculator(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
@@ -208,6 +247,11 @@ export interface FinalLottery extends BaseContract {
     overrides?: CallOverrides
   ): Promise<[BigNumber, number]>;
 
+  getTicketInfo(
+    ticket_number: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   lotteryNoCalculator(
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
@@ -246,6 +290,11 @@ export interface FinalLottery extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber, number]>;
 
+    getTicketInfo(
+      ticket_number: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     lotteryNoCalculator(overrides?: CallOverrides): Promise<BigNumber>;
 
     withdrawEther(
@@ -254,7 +303,26 @@ export interface FinalLottery extends BaseContract {
     ): Promise<void>;
   };
 
-  filters: {};
+  filters: {
+    "TicketInfo(uint256,uint256,bytes32,uint256,uint8,bool,uint8)"(
+      ticketNo?: null,
+      lotteryNo?: null,
+      ticketHash?: null,
+      ticketTimestamp?: null,
+      status?: null,
+      active?: null,
+      ticketTier?: null
+    ): TicketInfoEventFilter;
+    TicketInfo(
+      ticketNo?: null,
+      lotteryNo?: null,
+      ticketHash?: null,
+      ticketTimestamp?: null,
+      status?: null,
+      active?: null,
+      ticketTier?: null
+    ): TicketInfoEventFilter;
+  };
 
   estimateGas: {
     balance(
@@ -285,6 +353,11 @@ export interface FinalLottery extends BaseContract {
     getLastOwnedTicketNo(
       lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    getTicketInfo(
+      ticket_number: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     lotteryNoCalculator(
@@ -326,6 +399,11 @@ export interface FinalLottery extends BaseContract {
     getLastOwnedTicketNo(
       lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    getTicketInfo(
+      ticket_number: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     lotteryNoCalculator(

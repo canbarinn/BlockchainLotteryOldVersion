@@ -31,8 +31,10 @@ describe("Lock", function () {
 
     it("We can buy ticket", async function () {
         await Lottery.buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 3);
-        const tx = await Lottery.getLastOwnedTicketNo(1)
-        console.log(tx)
+        const timestamp = (await ethers.provider.getBlock(await ethers.provider.getBlockNumber())).timestamp;
+
+        await  expect(await  Lottery.getTicketInfo(1)).to.emit(Lottery, "TicketInfo").withArgs(1,1,"0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",timestamp,0,true,2)
+        
       });
   
 
