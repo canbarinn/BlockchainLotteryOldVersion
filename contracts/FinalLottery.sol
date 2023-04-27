@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.2 <0.9.0;
 
-contract DALottery {
+contract FinalLottery {
     uint ticketNoCounter;
-    uint lotteryNoCounter;
     uint lotteryDeploymentTime = block.timestamp;
 
     constructor() {
@@ -38,6 +37,13 @@ contract DALottery {
         uint lotteryBalance;
     }
 
+    function lotteryNoCalculator() public returns(uint){
+        uint currentTime = block.timestamp;
+        uint timePassed = currentTime - lotteryDeploymentTime;
+        uint lotteryNo = (timePassed / (60*60*24*7))+1;
+        return lotteryNo;
+    }
+
     function depositEther() public payable {
         // amountu cikar
         balance[msg.sender] += msg.value;
@@ -53,6 +59,7 @@ contract DALottery {
     }
 
     function buyTicket(bytes32 hash_rnd_number, int tier) public {
+        uint lotteryNo = lotteryNoCalculator();
         TicketTier ticketTier;
         require(tier == 1 || tier == 2 ||  tier == 3, "Wrong Input");
         ticketNoCounter += 1;
@@ -67,24 +74,25 @@ contract DALottery {
                     ticketTier = TicketTier.Quarter;
                 }   
     
-        tickets[msg.sender][lotteryNoCounter].push(
+        tickets[msg.sender][lotteryNo].push(
             Ticket(
                 ticketNoCounter,
-                lotteryNoCounter,
+                lotteryNo,
                 hash_rnd_number,
                 block.timestamp,
                 0,
                 ticketTier
             )
         );
-        lotteryInfos[lotteryNoCounter].ticketNosInLottery.push(ticketNoCounter);
+        lotteryInfos[lotteryNo].ticketNosInLottery.push(ticketNoCounter);
     }
 
 
     function collectTicketRefund(uint ticket_no) public {
 
 }
-    function findTicketInfosFromNo(uint ticket_no)  public view returns(uint, uint){
+    function findTicketInfosFromNo(uint ticket_no)  public returns(uint, uint){
+    uint lotteryNoCounter = lotteryNoCalculator();
     for(uint lottery_no=0; lottery_no<lotteryNoCounter+1; lottery_no++) {
         for (uint index=0; index<tickets[msg.sender][lottery_no].length; index++) {
             if(tickets[msg.sender][lottery_no][index].ticketNo == ticket_no){
@@ -92,5 +100,22 @@ contract DALottery {
             }
         } 
     }
+}
+
+function getLastOwnedTicketNo(
+        uint lottery_no
+    ) public view returns (uint, uint8) {
+        uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
+        return (
+            tickets[msg.sender][lottery_no][lastIndex].ticketNo,
+            tickets[msg.sender][lottery_no][lastIndex].status
+        );
+    }
+
+
+sum(numbers)
+
+function getTicketInfo(uint ticketNo) public view returns(Ticket memory){ 
+
 }
 }
