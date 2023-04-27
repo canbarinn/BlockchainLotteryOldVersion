@@ -21,12 +21,12 @@ contract FinalLottery {
     mapping(uint => LotteryInfo) lotteryInfos; //lotteryNo => LotteryInfo
 
     struct Ticket {
-        uint ticketNo;  
+        uint ticketNo;
         uint lotteryNo;
         bytes32 ticketHash;
         uint ticketTimestamp;
         uint8 status;
-        boolean active;
+        bool active;
         TicketTier ticketTier; //0 = full ticket, 1 = half ticket, 2 = quarter ticket
     }
 
@@ -38,10 +38,18 @@ contract FinalLottery {
         uint lotteryBalance;
     }
 
-    function lotteryNoCalculator() public returns(uint){
+    event TicketInfo(        uint ticketNo,
+        uint lotteryNo,
+        bytes32 ticketHash,
+        uint ticketTimestamp,
+        uint8 status,
+        bool active,
+        TicketTier ticketTier);
+
+    function lotteryNoCalculator() public returns (uint) {
         uint currentTime = block.timestamp;
         uint timePassed = currentTime - lotteryDeploymentTime;
-        uint lotteryNo = (timePassed / (60*60*24*7))+1;
+        uint lotteryNo = (timePassed / (60 * 60 * 24 * 7)) + 1;
         return lotteryNo;
     }
 
@@ -62,19 +70,16 @@ contract FinalLottery {
     function buyTicket(bytes32 hash_rnd_number, int tier) public {
         uint lotteryNo = lotteryNoCalculator();
         TicketTier ticketTier;
-        require(tier == 1 || tier == 2 ||  tier == 3, "Wrong Input");
+        require(tier == 1 || tier == 2 || tier == 3, "Wrong Input");
         ticketNoCounter += 1;
-        if(tier == 1) {
-                    ticketTier = TicketTier.Full;
-                }
-                else if(tier == 2) {
-                    ticketTier = TicketTier.Half;
+        if (tier == 1) {
+            ticketTier = TicketTier.Full;
+        } else if (tier == 2) {
+            ticketTier = TicketTier.Half;
+        } else if (tier == 3) {
+            ticketTier = TicketTier.Quarter;
+        }
 
-                }
-                else if(tier == 3) {
-                    ticketTier = TicketTier.Quarter;
-                }   
-    
         tickets[msg.sender][lotteryNo].push(
             Ticket(
                 ticketNoCounter,
@@ -89,41 +94,47 @@ contract FinalLottery {
         lotteryInfos[lotteryNo].ticketNosInLottery.push(ticketNoCounter);
     }
 
-
     function collectTicketRefund(uint ticket_no) public {
         uint lottery_no;
         uint ticket_index;
 
         (lottery_no, ticket_index) = findTicketInfosFromNo(ticket_no);
-        tier = tickets[msg.sender][lottery_no][ticket_index].ticketTier;
+        TicketTier tier = tickets[msg.sender][lottery_no][ticket_index]
+            .ticketTier;
         uint amount;
         if (tier == TicketTier.Full) {
             amount = 8;
-        }
-        else if (tier == TicketTier.Half) {
+        } else if (tier == TicketTier.Half) {
             amount = 4;
-        }
-        else if (tier == TicketTier.Full) {
+        } else if (tier == TicketTier.Full) {
             amount = 2;
         }
         balance[msg.sender] += amount;
         tickets[msg.sender][lottery_no][ticket_index].active = false;
-}
-
-
-
-    function findTicketInfosFromNo(uint ticket_no)  public returns(uint, uint){
-    uint lotteryNoCounter = lotteryNoCalculator();
-    for(uint lottery_no=0; lottery_no<lotteryNoCounter+1; lottery_no++) {
-        for (uint index=0; index<tickets[msg.sender][lottery_no].length; index++) {
-            if(tickets[msg.sender][lottery_no][index].ticketNo == ticket_no){
-                return(lottery_no,index);
-            }
-        } 
     }
-}
 
-function getLastOwnedTicketNo(
+    function findTicketInfosFromNo(uint ticket_no) public returns (uint, uint) {
+        uint lotteryNoCounter = lotteryNoCalculator();
+        for (
+            uint lottery_no = 0;
+            lottery_no < lotteryNoCounter + 1;
+            lottery_no++
+        ) {
+            for (
+                uint index = 0;
+                index < tickets[msg.sender][lottery_no].length;
+                index++
+            ) {
+                if (
+                    tickets[msg.sender][lottery_no][index].ticketNo == ticket_no
+                ) {
+                    return (lottery_no, index);
+                }
+            }
+        }
+    }
+
+    function getLastOwnedTicketNo(
         uint lottery_no
     ) public view returns (uint, uint8) {
         uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
@@ -133,9 +144,19 @@ function getLastOwnedTicketNo(
         );
     }
 
+    function getTicketInfo(
+        uint ticket_number
+    ) public  {
+        (uint lottery_no, uint index) = findTicketInfosFromNo(ticket_number);
 
-
-function getTicketInfo(uint ticketNo) public view returns(Ticket memory){ 
-
-}
+        emit TicketInfo (
+            tickets[msg.sender][lottery_no][index].ticketNo,
+            tickets[msg.sender][lottery_no][index].lotteryNo,
+            tickets[msg.sender][lottery_no][index].ticketHash,
+            tickets[msg.sender][lottery_no][index].ticketTimestamp,
+            tickets[msg.sender][lottery_no][index].status,
+            tickets[msg.sender][lottery_no][index].active,
+            tickets[msg.sender][lottery_no][index].ticketTier
+        );
+    }
 }
