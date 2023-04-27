@@ -175,4 +175,45 @@ contract FinalLottery {
             tickets[msg.sender][lottery_no][index].ticketTier
         );
     }
+
+    function getRandomNumber() public view returns(uint) {
+        return uint(keccak256(abi.encodePacked(block.timestamp)));
+    }
+
+    function pickWinner(uint lottery_no) private {
+        
+      
+
+        uint index1 = getRandomNumber() % lotteryInfos[lottery_no].ticketNosInLottery.length;
+        uint index2 = getRandomNumber() % lotteryInfos[lottery_no].ticketNosInLottery.length;
+        uint index3 = getRandomNumber() % lotteryInfos[lottery_no].ticketNosInLottery.length;
+        
+        while((index1==index2) || (index2 == index3) || (index1 == index3)) {
+            if(index1 == index2) {
+                index1 = index2+1;
+            } else if(index2 == index3){
+                index2 = index3+1;
+            } else if(index1 == index3) {
+                index1 = index3+1;
+            }
+        }
+
+        lotteryInfos[lottery_no].winningTickets.push(index1);
+        lotteryInfos[lottery_no].winningTickets.push(index2);
+        lotteryInfos[lottery_no].winningTickets.push(index3);
+
+
+    }
+
+    function checkIfTicketWon(uint lottery_no, uint ticket_no) public view returns(uint) {
+        if(!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
+
+        }
+
+
+    }
+
+    
+
+
 }

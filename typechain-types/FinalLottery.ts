@@ -36,6 +36,7 @@ export interface FinalLotteryInterface extends utils.Interface {
     "depositEther()": FunctionFragment;
     "findTicketInfosFromNo(uint256)": FunctionFragment;
     "getLastOwnedTicketNo(uint256)": FunctionFragment;
+    "getRandomNumber()": FunctionFragment;
     "getTicketInfo(uint256)": FunctionFragment;
     "lotteryNoCalculator()": FunctionFragment;
     "withdrawEther(uint256)": FunctionFragment;
@@ -49,6 +50,7 @@ export interface FinalLotteryInterface extends utils.Interface {
       | "depositEther"
       | "findTicketInfosFromNo"
       | "getLastOwnedTicketNo"
+      | "getRandomNumber"
       | "getTicketInfo"
       | "lotteryNoCalculator"
       | "withdrawEther"
@@ -79,6 +81,10 @@ export interface FinalLotteryInterface extends utils.Interface {
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
+    functionFragment: "getRandomNumber",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "getTicketInfo",
     values: [PromiseOrValue<BigNumberish>]
   ): string;
@@ -107,6 +113,10 @@ export interface FinalLotteryInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getLastOwnedTicketNo",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getRandomNumber",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -202,6 +212,8 @@ export interface FinalLottery extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber, number]>;
 
+    getRandomNumber(overrides?: CallOverrides): Promise<[BigNumber]>;
+
     getTicketInfo(
       ticket_number: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -247,6 +259,8 @@ export interface FinalLottery extends BaseContract {
     overrides?: CallOverrides
   ): Promise<[BigNumber, number]>;
 
+  getRandomNumber(overrides?: CallOverrides): Promise<BigNumber>;
+
   getTicketInfo(
     ticket_number: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -289,6 +303,8 @@ export interface FinalLottery extends BaseContract {
       lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[BigNumber, number]>;
+
+    getRandomNumber(overrides?: CallOverrides): Promise<BigNumber>;
 
     getTicketInfo(
       ticket_number: PromiseOrValue<BigNumberish>,
@@ -355,6 +371,8 @@ export interface FinalLottery extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    getRandomNumber(overrides?: CallOverrides): Promise<BigNumber>;
+
     getTicketInfo(
       ticket_number: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -400,6 +418,8 @@ export interface FinalLottery extends BaseContract {
       lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
+
+    getRandomNumber(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     getTicketInfo(
       ticket_number: PromiseOrValue<BigNumberish>,
