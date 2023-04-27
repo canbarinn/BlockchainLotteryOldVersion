@@ -194,7 +194,7 @@ contract FinalLottery {
     function pickWinner(uint lottery_no) private {
         if (lotteryInfos[lottery_no].ticketNosInLottery.length <= 3) {
             revert("not enough tickets");
-            // make the tickets refundable here
+            // TODO: make the tickets refundable here
         }
         uint numberofTickets = lotteryInfos[lottery_no]
             .ticketNosInLottery
@@ -245,6 +245,7 @@ contract FinalLottery {
         TicketTier tier = tickets[msg.sender][lottery_no][ticket_index]
             .ticketTier;
 
+        // TODO: we need to return the won amount, we need to store it on the blockchain
         amount = getamount(tier);
 
         return (ticket_no, amount);
