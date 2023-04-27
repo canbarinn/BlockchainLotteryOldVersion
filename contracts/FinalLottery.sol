@@ -26,7 +26,7 @@ contract FinalLottery {
         bytes32 ticketHash;
         uint ticketTimestamp;
         uint8 status;
-        boolean active;
+        bool active;
         TicketTier ticketTier; //0 = full ticket, 1 = half ticket, 2 = quarter ticket
     }
 
@@ -93,9 +93,9 @@ contract FinalLottery {
     function collectTicketRefund(uint ticket_no) public {
         uint lottery_no;
         uint ticket_index;
-
+        
         (lottery_no, ticket_index) = findTicketInfosFromNo(ticket_no);
-        tier = tickets[msg.sender][lottery_no][ticket_index].ticketTier;
+        TicketTier tier = tickets[msg.sender][lottery_no][ticket_index].ticketTier;
         uint amount;
         if (tier == TicketTier.Full) {
             amount = 8;
@@ -109,7 +109,15 @@ contract FinalLottery {
         balance[msg.sender] += amount;
         tickets[msg.sender][lottery_no][ticket_index].active = false;
 }
+    function getIthOwnedTicketNo(uint i,uint lottery_no) public view returns(uint,uint8 status){
+        Ticket memory targetTicket;
+        targetTicket = tickets[msg.sender][lottery_no][i];
+        uint ticketNo = targetTicket.ticketNo;
+        uint8 ticketStatus = targetTicket.status;
+        return (ticketNo, ticketStatus);
+}
 
+   
 
 
     function findTicketInfosFromNo(uint ticket_no)  public returns(uint, uint){
@@ -121,7 +129,8 @@ contract FinalLottery {
             }
         } 
     }
-}
+    }
+
 
 function getLastOwnedTicketNo(
         uint lottery_no
