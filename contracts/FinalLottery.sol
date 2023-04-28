@@ -5,6 +5,7 @@ contract FinalLottery {
     uint ticketNoCounter;
     uint lotteryDeploymentTime = block.timestamp;
     uint lotteryBalance;
+    uint[] singleLotteryMoneyPool;
 
     constructor() {
         lotteryDeploymentTime = block.timestamp;
@@ -20,6 +21,7 @@ contract FinalLottery {
     mapping(address => mapping(uint => Ticket[])) tickets; //address => lotteryNo => Ticket
     mapping(address => uint256) public balance;
     mapping(uint => LotteryInfo) lotteryInfos; //lotteryNo => LotteryInfo
+
 
     struct Ticket {
         uint ticketNo;
@@ -73,6 +75,15 @@ contract FinalLottery {
 
     function buyTicket(bytes32 hash_rnd_number, int tier) public {
         uint lotteryNo = lotteryNoCalculator();
+
+        //We have to check if the lottery before has already picked a winner when we buy tickets in the next round, not sure with indexing if it has to be -1 or -2
+        
+        if (!(lotteryInfos[lotteryNo -1].winningTickets.length == 3)) {
+            //picks the winner for the lottery before
+            pickWinner(lotteryNo -1);
+            transferleftoverMoneytoNextRound();
+        }
+        
         TicketTier ticketTier;
         require(tier == 1 || tier == 2 || tier == 3, "Wrong Input");
         ticketNoCounter += 1;
@@ -96,6 +107,7 @@ contract FinalLottery {
             )
         );
         lotteryInfos[lotteryNo].ticketNosInLottery.push(ticketNoCounter);
+        singleLotteryMoneyPool[lotteryNo - 1] += getamount(ticketTier);
         lotteryBalance += getamount(ticketTier);
     }
 
@@ -127,6 +139,7 @@ contract FinalLottery {
             amount = 2;
         }
         balance[msg.sender] += amount;
+        singleLotteryMoneyPool[lottery_no - 1] -= amount;
         lotteryBalance -= amount;
         tickets[msg.sender][lottery_no][ticket_index].active = false;
     }
@@ -233,6 +246,104 @@ contract FinalLottery {
         }
     }
 
+    /**
+    This Function calculates the value of a specific winning tickets
+     */
+    function calculateSinglePriceValue(uint thPrice, uint lottery_no) public returns (string memory, uint) {
+        uint prize;
+        string memory prizeName;
+        uint WinnerTicketNo = lotteryInfos[lottery_no].ticketNosInLottery[lotteryInfos[lottery_no].winningTickets[thPrice]];
+        (, uint index) = findTicketInfosFromNo(WinnerTicketNo);
+        if (WinnerTicketNo == 1) {
+            if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Full
+            ) {
+                //prize = lotteryBalance / 2;
+                prize = singleLotteryMoneyPool[lottery_no - 1] / 2;
+                prizeName = "Full First";
+            } else if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Half
+            ) {
+                //prize = lotteryBalance / 4;
+                prize = singleLotteryMoneyPool[lottery_no - 1] / 4;
+                prizeName = "Half First";
+            } else if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Quarter
+            ) {
+                //prize = lotteryBalance / 8;
+                prize = singleLotteryMoneyPool[lottery_no - 1] / 8;
+                prizeName = "Quarter First";
+            } else {
+                revert("Invalid operation.");
+            }
+        } else if (WinnerTicketNo == 2) {
+            if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Full
+            ) {
+                prizeName = "Full Second";
+                //prize = lotteryBalance / 4;
+                prize = singleLotteryMoneyPool[lottery_no - 1] / 4;
+            } else if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Half
+            ) {
+                prizeName = "Half Second";
+                //prize = lotteryBalance / 8;
+                prize = singleLotteryMoneyPool[lottery_no - 1] / 8;
+            } else if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Quarter
+            ) {
+                prizeName = "Quarter Second";
+                //prize = lotteryBalance / 16;
+                prize = singleLotteryMoneyPool[lottery_no - 1] / 16;
+            } else {
+                revert("Invalid operation.");
+            }
+        } else if (WinnerTicketNo == 3) {
+            if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Full
+            ) {
+                prizeName = "Full Third";
+                //prize = lotteryBalance / 8;
+                prize = singleLotteryMoneyPool[lottery_no - 1] / 8;
+            } else if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Half
+            ) {
+                prizeName = "Half Third";
+                //prize = lotteryBalance / 16;
+                prize = singleLotteryMoneyPool[lottery_no - 1] / 16;
+            } else if (
+                tickets[msg.sender][lottery_no][index].ticketTier ==
+                TicketTier.Quarter
+            ) {
+                prizeName = "Quarter Third";
+                //prize = lotteryBalance / 32;
+                prize = singleLotteryMoneyPool[lottery_no - 1] / 32;
+            } else {
+                revert("Invalid operation.");
+            }
+        } else {
+            prize = 0;
+        }
+        return (prizeName, prize) ;
+    }
+    
+    /**
+    this function calculates the total value of the winners tickets in a specifiv lottery, has to be substracted from the total lottery balance when
+     */
+     //needs more requirements, for example if the winners tickets have been determined
+    function calculateTotalPriceValue(uint lottery_no) public returns(uint){
+        uint totalpricevalue = calculateSinglePriceValue(1, lottery_no ) + calculateSinglePriceValue(2, lottery_no) + calculateSinglePriceValue(3, lottery_no);
+        return totalpricevalue;
+    }
+
     function getIthWinningTicket(
         uint i,
         uint lottery_no
@@ -255,12 +366,17 @@ contract FinalLottery {
         uint lottery_no,
         uint ticket_no
     ) public returns (uint) {
+
+        //this requirement assures that the buyer is already allowed to check his ticket /buying phase is over because he has to wait until buying time is over
+        require(lottery_no != lotteryNoCalculator(), "You have to wait for the reveal stage");
+
+        //picks winners tickets if they haven`t been chosen before
         if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
             pickWinner(lottery_no);
+            transferleftoverMoneytoNextRound();
         }
         uint prize;
         string memory prizeName;
-
         uint firstPrizeWinnerTicketNo = lotteryInfos[lottery_no]
             .ticketNosInLottery[lotteryInfos[lottery_no].winningTickets[0]];
         uint secondPrizeWinnerTicketNo = lotteryInfos[lottery_no]
@@ -270,81 +386,43 @@ contract FinalLottery {
 
         (, uint index) = findTicketInfosFromNo(ticket_no);
         if (ticket_no == firstPrizeWinnerTicketNo) {
-            if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
-                TicketTier.Full
-            ) {
-                prize = lotteryBalance / 2;
-                prizeName = "Full First";
-            } else if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
-                TicketTier.Half
-            ) {
-                prize = lotteryBalance / 4;
-                prizeName = "Half First";
-            } else if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
-                TicketTier.Quarter
-            ) {
-                prize = lotteryBalance / 8;
-                prizeName = "Quarter First";
-            } else {
-                revert("Invalid operation.");
-            }
+            (prizeName, prize) = calculatePriceValue(1,lottery_no);
         } else if (ticket_no == secondPrizeWinnerTicketNo) {
-            if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
-                TicketTier.Full
-            ) {
-                prizeName = "Full Second";
-                prize = lotteryBalance / 4;
-            } else if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
-                TicketTier.Half
-            ) {
-                prizeName = "Half Second";
-                prize = lotteryBalance / 8;
-            } else if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
-                TicketTier.Quarter
-            ) {
-                prizeName = "Quarter Second";
-                prize = lotteryBalance / 16;
-            } else {
-                revert("Invalid operation.");
-            }
+           (prizeName, prize)  = calculatePriceValue(2,lottery_no);
         } else if (ticket_no == thirdPrizeWinnerTicketNo) {
-            if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
-                TicketTier.Full
-            ) {
-                prizeName = "Full Third";
-                prize = lotteryBalance / 8;
-            } else if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
-                TicketTier.Half
-            ) {
-                prizeName = "Half Third";
-                prize = lotteryBalance / 16;
-            } else if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
-                TicketTier.Quarter
-            ) {
-                prizeName = "Quarter Third";
-                prize = lotteryBalance / 32;
-            } else {
-                revert("Invalid operation.");
-            }
-        } else {
-            prize = 0;
+           (prizeName, prize)  = calculatePriceValue(3,lottery_no);
         }
         emit AmountOfPrize(prizeName, prize);
+        
         return prize;
+        }
+
+
+    /**
+    This function substracts the price from the total lottery money pool but also from the pool of the single specific lottery pool
+    Is called in checkIfTicketWon() function
+     */
+    function substractPickedUpPriceFromPool(uint lottery_no, uint prizeAmount) public {
+        lotteryBalance -= prizeAmount;
+
+        // !!! Do I have to substract since array starts at 0 ??????
+        singleLotteryMoneyPool[lottery_no - 1] -= prizeAmount;
+    
     }
 
-    function getTotalLotteryMoneyCollected(
-        uint lottery_no
-    ) public view returns (uint amount) {
+
+    /**
+    This function transferes the leftover Money (substracted by the Price Money) to the actual round, is called in BuyTicket() and
+     */
+    function transferleftoverMoneytoNextRound() public {
+    
+        uint lotteryNo = lotteryNoCalculator();
+        //maybe indexing problem again as arrays stars with 0
+        singleLotteryMoneyPool[lotteryNo] += singleLotteryMoneyPool[lotteryNo - 1];
+    }
+
+
+    function getTotalLotteryMoneyCollected() public view returns (uint amount) {
         return lotteryBalance;
     }
 }
