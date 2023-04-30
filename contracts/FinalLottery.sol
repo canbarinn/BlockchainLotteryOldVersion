@@ -74,13 +74,14 @@ contract FinalLottery {
     }
 
     function buyTicket(bytes32 hash_rnd_number, int tier) public {
-        uint lotteryNo = lotteryNoCalculator();
+        uint lottery_no = lotteryNoCalculator();
 
         //We have to check if the lottery before has already picked a winner when we buy tickets in the next round, not sure with indexing if it has to be -1 or -2
         
-        if (!(lotteryInfos[lotteryNo -1].winningTickets.length == 3)) {
+        if (!(lotteryInfos[lottery_no -1].winningTickets.length == 3)) {
             //picks the winner for the lottery before
-            pickWinner(lotteryNo -1);
+            pickWinner(lottery_no -1);
+
             transferleftoverMoneytoNextRound();
         }
         
@@ -95,10 +96,10 @@ contract FinalLottery {
             ticketTier = TicketTier.Quarter;
         }
 
-        tickets[msg.sender][lotteryNo].push(
+        tickets[msg.sender][lottery_no].push(
             Ticket(
                 ticketNoCounter,
-                lotteryNo,
+                lottery_no,
                 hash_rnd_number,
                 block.timestamp,
                 0,
@@ -106,8 +107,8 @@ contract FinalLottery {
                 ticketTier
             )
         );
-        lotteryInfos[lotteryNo].ticketNosInLottery.push(ticketNoCounter);
-        singleLotteryMoneyPool[lotteryNo - 1] += getamount(ticketTier);
+        lotteryInfos[lottery_no].ticketNosInLottery.push(ticketNoCounter);
+        singleLotteryMoneyPool[lottery_no - 1] += getamount(ticketTier);
         lotteryBalance += getamount(ticketTier);
     }
 
@@ -247,7 +248,7 @@ contract FinalLottery {
     }
 
     /**
-    This Function calculates the value of a specific winning tickets
+    This Function calculates the value of a specific winning tickets, used in calculateTotalPriceValue() and checkIfTiketWon
      */
     function calculateSinglePriceValue(uint thPrice, uint lottery_no) public returns (string memory, uint) {
         uint prize;
@@ -340,9 +341,14 @@ contract FinalLottery {
      */
      //needs more requirements, for example if the winners tickets have been determined
     function calculateTotalPriceValue(uint lottery_no) public returns(uint){
-        uint totalpricevalue = calculateSinglePriceValue(1, lottery_no ) + calculateSinglePriceValue(2, lottery_no) + calculateSinglePriceValue(3, lottery_no);
+        (,uint firstprice) = calculateSinglePriceValue(1, lottery_no);
+        (,uint secondprice)= calculateSinglePriceValue(2, lottery_no);
+        (,uint thirdprice)  = calculateSinglePriceValue(3, lottery_no);
+        uint totalpricevalue = firstprice + secondprice + thirdprice;
         return totalpricevalue;
     }
+
+    
 
     function getIthWinningTicket(
         uint i,
@@ -357,7 +363,8 @@ contract FinalLottery {
             .ticketTier;
 
         // TODO: we need to return the won amount, we need to store it on the blockchain
-        amount = getamount(tier);
+        (,amount) = calculateSinglePriceValue(i, lottery_no);
+        //amount = getamount(tier);
 
         return (ticket_no, amount);
     }
@@ -383,28 +390,26 @@ contract FinalLottery {
             .ticketNosInLottery[lotteryInfos[lottery_no].winningTickets[1]];
         uint thirdPrizeWinnerTicketNo = lotteryInfos[lottery_no]
             .ticketNosInLottery[lotteryInfos[lottery_no].winningTickets[2]];
-
-        (, uint index) = findTicketInfosFromNo(ticket_no);
         if (ticket_no == firstPrizeWinnerTicketNo) {
-            (prizeName, prize) = calculatePriceValue(1,lottery_no);
+            (prizeName, prize) = calculateSinglePriceValue(1,lottery_no);
         } else if (ticket_no == secondPrizeWinnerTicketNo) {
-           (prizeName, prize)  = calculatePriceValue(2,lottery_no);
+           (prizeName, prize)  = calculateSinglePriceValue(2,lottery_no);
         } else if (ticket_no == thirdPrizeWinnerTicketNo) {
-           (prizeName, prize)  = calculatePriceValue(3,lottery_no);
+           (prizeName, prize)  = calculateSinglePriceValue(3,lottery_no);
         }
         emit AmountOfPrize(prizeName, prize);
         
+        substractPickedUpPriceFromPool(lottery_no, prize);
         return prize;
+        //ToDo Add won prize to users balance
         }
 
 
     /**
-    This function substracts the price from the total lottery money pool but also from the pool of the single specific lottery pool
+    This function substracts the price from the pool of the single specific lottery pool
     Is called in checkIfTicketWon() function
      */
     function substractPickedUpPriceFromPool(uint lottery_no, uint prizeAmount) public {
-        lotteryBalance -= prizeAmount;
-
         // !!! Do I have to substract since array starts at 0 ??????
         singleLotteryMoneyPool[lottery_no - 1] -= prizeAmount;
     
@@ -415,10 +420,17 @@ contract FinalLottery {
     This function transferes the leftover Money (substracted by the Price Money) to the actual round, is called in BuyTicket() and
      */
     function transferleftoverMoneytoNextRound() public {
+
+        uint lottery_no = lotteryNoCalculator();
+         // !!! Do I have to substract since array starts at 0 ??????
+        uint moneyInPool = singleLotteryMoneyPool[lottery_no];
+        uint prizeAmount = calculateTotalPriceValue(lottery_no);
+        uint moneyToTransfer = moneyInPool + prizeAmount;
+        lotteryBalance -= prizeAmount;
+
+        singleLotteryMoneyPool[lottery_no] += moneyToTransfer;
+        singleLotteryMoneyPool[lottery_no - 1] = prizeAmount;
     
-        uint lotteryNo = lotteryNoCalculator();
-        //maybe indexing problem again as arrays stars with 0
-        singleLotteryMoneyPool[lotteryNo] += singleLotteryMoneyPool[lotteryNo - 1];
     }
 
 
