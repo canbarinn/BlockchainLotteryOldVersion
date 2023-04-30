@@ -6,7 +6,9 @@ contract FinalLottery {
     uint lotteryDeploymentTime = block.timestamp;
     uint lotteryBalance;
     uint[] singleLotteryMoneyPool;
+    uint[] singleLotteryMoneyCollected; 
 
+ 
     constructor() {
         lotteryDeploymentTime = block.timestamp;
     }
@@ -78,9 +80,9 @@ contract FinalLottery {
 
         //We have to check if the lottery before has already picked a winner when we buy tickets in the next round, not sure with indexing if it has to be -1 or -2
         
-        if (!(lotteryInfos[lottery_no -1].winningTickets.length == 3)) {
+        if (!(lotteryInfos[lottery_no -2].winningTickets.length == 3)) {
             //picks the winner for the lottery before
-            pickWinner(lottery_no -1);
+            pickWinner(lottery_no -2);
 
             transferleftoverMoneytoNextRound();
         }
@@ -110,6 +112,7 @@ contract FinalLottery {
         lotteryInfos[lottery_no].ticketNosInLottery.push(ticketNoCounter);
         singleLotteryMoneyPool[lottery_no - 1] += getamount(ticketTier);
         lotteryBalance += getamount(ticketTier);
+        singleLotteryMoneyCollected[lottery_no-1] += getamount(ticketTier);
     }
 
     function getamount(TicketTier tier) public pure returns (uint) {
@@ -156,15 +159,15 @@ contract FinalLottery {
         return (ticketNo, ticketStatus);
     }
 
-    function findTicketInfosFromNo(uint ticket_no) public returns (uint, uint) {
+    function findTicketInfosFromNo(uint ticket_no) public returns (uint lottery_no, uint index) {
         uint lotteryNoCounter = lotteryNoCalculator();
         for (
-            uint lottery_no = 0;
+            lottery_no = 0;
             lottery_no < lotteryNoCounter + 1;
             lottery_no++
         ) {
             for (
-                uint index = 0;
+                index = 0;
                 index < tickets[msg.sender][lottery_no].length;
                 index++
             ) {
@@ -249,6 +252,7 @@ contract FinalLottery {
 
     /**
     This Function calculates the value of a specific winning tickets, used in calculateTotalPriceValue() and checkIfTiketWon
+    TODOCAN: winnerticketno should start with lower case
      */
     function calculateSinglePriceValue(uint thPrice, uint lottery_no) public returns (string memory, uint) {
         uint prize;
@@ -399,7 +403,7 @@ contract FinalLottery {
         }
         emit AmountOfPrize(prizeName, prize);
         
-        substractPickedUpPriceFromPool(lottery_no, prize);
+        // substractPickedUpPriceFromPool(lottery_no, prize); //TODOCAN: we can use it in collectprize function
         return prize;
         //ToDo Add won prize to users balance
         }
@@ -423,9 +427,11 @@ contract FinalLottery {
 
         uint lottery_no = lotteryNoCalculator();
          // !!! Do I have to substract since array starts at 0 ??????
-        uint moneyInPool = singleLotteryMoneyPool[lottery_no];
+        uint moneyInPool = singleLotteryMoneyPool[lottery_no-1];
+        // TODOCAN:this should be -1 , singleLotteryMoneyPool
+
         uint prizeAmount = calculateTotalPriceValue(lottery_no);
-        uint moneyToTransfer = moneyInPool + prizeAmount;
+        uint moneyToTransfer = moneyInPool - prizeAmount;
         lotteryBalance -= prizeAmount;
 
         singleLotteryMoneyPool[lottery_no] += moneyToTransfer;
