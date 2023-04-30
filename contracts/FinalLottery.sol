@@ -77,14 +77,16 @@ contract FinalLottery {
     function buyTicket(bytes32 hash_rnd_number, int tier) public {
         uint lottery_no = lotteryNoCalculator();
 
-        //We have to check if the lottery before has already picked a winner when we buy tickets in the next round, not sure with indexing if it has to be -1 or -2
-        
-        if (!(lotteryInfos[lottery_no - 2].winningTickets.length == 3)) {
+        // We have to check if the lottery before has already picked a winner when we buy tickets in the next round, not sure with indexing if it has to be -1 or -2
+    if(lottery_no>2) {
+        if (!(lotteryInfos[lottery_no - 2].winningTickets.length > 3)) {
             //picks the winner for the lottery before
             pickWinner(lottery_no - 2);
 
             transferleftoverMoneytoNextRound();
         }
+    } 
+
 
 
     
@@ -111,10 +113,17 @@ contract FinalLottery {
                 ticketTier
             )
         );
-        lotteryInfos[lottery_no].ticketNosInLottery.push(ticketNoCounter);
-        singleLotteryMoneyPool[lottery_no - 1] += getamount(ticketTier);
         lotteryBalance += getamount(ticketTier);
-        singleLotteryMoneyCollected[lottery_no - 1] += getamount(ticketTier);
+        lotteryInfos[lottery_no].ticketNosInLottery.push(ticketNoCounter);
+
+        if(singleLotteryMoneyPool.length>=lottery_no &&  singleLotteryMoneyCollected.length>=lottery_no){
+            singleLotteryMoneyPool[lottery_no - 1] += getamount(ticketTier);
+            singleLotteryMoneyCollected[lottery_no - 1] += getamount(ticketTier);
+        } else {
+            singleLotteryMoneyCollected.push(getamount(ticketTier));
+            singleLotteryMoneyPool.push(getamount(ticketTier));
+        }
+
     }
 
     function getamount(TicketTier tier) public pure returns (uint) {
@@ -363,9 +372,6 @@ contract FinalLottery {
         ticket_no = lotteryInfos[lottery_no].ticketNosInLottery[ticket_index];
 
         (, ticket_index) = findTicketInfosFromNo(ticket_no);
-
-        TicketTier tier = tickets[msg.sender][lottery_no][ticket_index]
-            .ticketTier;
 
         // TODO: we need to return the won amount, we need to store it on the blockchain
         (,amount) = calculateSinglePriceValue(i, lottery_no);

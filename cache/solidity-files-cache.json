@@ -420,8 +420,8 @@
       ]
     },
     "/Users/canbarin/Documents/GitHub/BlockchainLotteryOldVersion/contracts/FinalLottery.sol": {
-      "lastModificationDate": 1682618918876,
-      "contentHash": "4c4d4180639339b4e5d99bb8e150d3b0",
+      "lastModificationDate": 1682889294968,
+      "contentHash": "8a38b05b81baaade3f773849adbe9dc9",
       "sourceName": "contracts/FinalLottery.sol",
       "solcConfig": {
         "version": "0.8.18",
