@@ -6,9 +6,8 @@ contract FinalLottery {
     uint lotteryDeploymentTime = block.timestamp;
     uint lotteryBalance;
     uint[] singleLotteryMoneyPool;
-    uint[] singleLotteryMoneyCollected; 
+    uint[] singleLotteryMoneyCollected;
 
- 
     constructor() {
         lotteryDeploymentTime = block.timestamp;
     }
@@ -80,12 +79,15 @@ contract FinalLottery {
 
         //We have to check if the lottery before has already picked a winner when we buy tickets in the next round, not sure with indexing if it has to be -1 or -2
         
-        if (!(lotteryInfos[lottery_no -2].winningTickets.length == 3)) {
+        if (!(lotteryInfos[lottery_no - 2].winningTickets.length == 3)) {
             //picks the winner for the lottery before
-            pickWinner(lottery_no -2);
+            pickWinner(lottery_no - 2);
 
             transferleftoverMoneytoNextRound();
         }
+
+
+    
         
         TicketTier ticketTier;
         require(tier == 1 || tier == 2 || tier == 3, "Wrong Input");
@@ -112,7 +114,7 @@ contract FinalLottery {
         lotteryInfos[lottery_no].ticketNosInLottery.push(ticketNoCounter);
         singleLotteryMoneyPool[lottery_no - 1] += getamount(ticketTier);
         lotteryBalance += getamount(ticketTier);
-        singleLotteryMoneyCollected[lottery_no-1] += getamount(ticketTier);
+        singleLotteryMoneyCollected[lottery_no - 1] += getamount(ticketTier);
     }
 
     function getamount(TicketTier tier) public pure returns (uint) {
@@ -159,15 +161,15 @@ contract FinalLottery {
         return (ticketNo, ticketStatus);
     }
 
-    function findTicketInfosFromNo(uint ticket_no) public returns (uint lottery_no, uint index) {
+    function findTicketInfosFromNo(uint ticket_no) public returns (uint, uint) {
         uint lotteryNoCounter = lotteryNoCalculator();
         for (
-            lottery_no = 0;
+            uint lottery_no = 0;
             lottery_no < lotteryNoCounter + 1;
             lottery_no++
         ) {
             for (
-                index = 0;
+                uint index = 0;
                 index < tickets[msg.sender][lottery_no].length;
                 index++
             ) {
@@ -252,14 +254,13 @@ contract FinalLottery {
 
     /**
     This Function calculates the value of a specific winning tickets, used in calculateTotalPriceValue() and checkIfTiketWon
-    TODOCAN: winnerticketno should start with lower case
      */
     function calculateSinglePriceValue(uint thPrice, uint lottery_no) public returns (string memory, uint) {
         uint prize;
         string memory prizeName;
-        uint WinnerTicketNo = lotteryInfos[lottery_no].ticketNosInLottery[lotteryInfos[lottery_no].winningTickets[thPrice]];
-        (, uint index) = findTicketInfosFromNo(WinnerTicketNo);
-        if (WinnerTicketNo == 1) {
+        uint winnerTicketNo = lotteryInfos[lottery_no].ticketNosInLottery[lotteryInfos[lottery_no].winningTickets[thPrice]];
+        (, uint index) = findTicketInfosFromNo(winnerTicketNo);
+        if (winnerTicketNo == 1) {
             if (
                 tickets[msg.sender][lottery_no][index].ticketTier ==
                 TicketTier.Full
@@ -284,7 +285,7 @@ contract FinalLottery {
             } else {
                 revert("Invalid operation.");
             }
-        } else if (WinnerTicketNo == 2) {
+        } else if (winnerTicketNo == 2) {
             if (
                 tickets[msg.sender][lottery_no][index].ticketTier ==
                 TicketTier.Full
@@ -309,7 +310,7 @@ contract FinalLottery {
             } else {
                 revert("Invalid operation.");
             }
-        } else if (WinnerTicketNo == 3) {
+        } else if (winnerTicketNo == 3) {
             if (
                 tickets[msg.sender][lottery_no][index].ticketTier ==
                 TicketTier.Full
@@ -403,22 +404,10 @@ contract FinalLottery {
         }
         emit AmountOfPrize(prizeName, prize);
         
-        // substractPickedUpPriceFromPool(lottery_no, prize); //TODOCAN: we can use it in collectprize function
+        
         return prize;
         //ToDo Add won prize to users balance
         }
-
-
-    /**
-    This function substracts the price from the pool of the single specific lottery pool
-    Is called in checkIfTicketWon() function
-     */
-    function substractPickedUpPriceFromPool(uint lottery_no, uint prizeAmount) public {
-        // !!! Do I have to substract since array starts at 0 ??????
-        singleLotteryMoneyPool[lottery_no - 1] -= prizeAmount;
-    
-    }
-
 
     /**
     This function transferes the leftover Money (substracted by the Price Money) to the actual round, is called in BuyTicket() and
@@ -427,11 +416,9 @@ contract FinalLottery {
 
         uint lottery_no = lotteryNoCalculator();
          // !!! Do I have to substract since array starts at 0 ??????
-        uint moneyInPool = singleLotteryMoneyPool[lottery_no-1];
-        // TODOCAN:this should be -1 , singleLotteryMoneyPool
-
+        uint moneyInPool = singleLotteryMoneyPool[lottery_no];
         uint prizeAmount = calculateTotalPriceValue(lottery_no);
-        uint moneyToTransfer = moneyInPool - prizeAmount;
+        uint moneyToTransfer = moneyInPool + prizeAmount;
         lotteryBalance -= prizeAmount;
 
         singleLotteryMoneyPool[lottery_no] += moneyToTransfer;
@@ -439,8 +426,29 @@ contract FinalLottery {
     
     }
 
+    function collectTicketPrize(uint lottery_no, uint ticket_no) public returns (uint){
+        uint prize = 0;
+        for (uint i = 0; i < 3; i++) {
+            if (lotteryInfos[lottery_no].winningTickets[i] == ticket_no) {
+                (,prize) = calculateSinglePriceValue(i, lottery_no);
+                
+            }
+        
+    }
+    lotteryBalance - prize;
+    singleLotteryMoneyPool[lottery_no] - prize;
+    return prize;
+    }
+
 
     function getTotalLotteryMoneyCollected() public view returns (uint amount) {
         return lotteryBalance;
+
+
     }
+
+    function getTotalLotteryMoneyCollected (uint lottery_no) public view returns (uint amount) {
+
+        return singleLotteryMoneyCollected[lottery_no - 1];
+}
 }
