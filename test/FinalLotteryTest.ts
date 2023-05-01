@@ -30,6 +30,14 @@ describe("Lock", function () {
     });
 
     it("We can buy ticket", async function () {
+      
+      await Lottery.depositEther( { value: 100 * 10**12 });
+   
+      const mon = await Lottery.getMoneyCollected();
+      console.log("money collected",mon)
+
+      await Lottery.buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 1);
+      await Lottery.buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 1);
       await Lottery.buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 1);
       await Lottery.buyTicket("0x9abc19dab27cd34d3fcdee5db435600ca1a7c8f6e33e8201215db86aa4b96795", 1);
       await Lottery.buyTicket("0x13600b294191fc92924bb3ce4b969c1e7e2bab8f4c93c3fc6d0a51733df3c060", 1);
@@ -63,13 +71,37 @@ describe("Lock", function () {
       await Lottery.buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 1);
       await Lottery.buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 3);
 
-      const winningTicket = await Lottery.collectTicketPrize(1,2);
-      console.log(winningTicket)
+      const winningTicket = await Lottery.collectTicketPrize(1,1);
+      // console.log("ticket1",winningTicket)
+      const winningTicket2 = await Lottery.collectTicketPrize(1,2);
+      // console.log("ticket2",winningTicket2)
+      const winningTicket3 = await Lottery.collectTicketPrize(1,3);
+      // console.log("ticket3",winningTicket3)
+      const winningTicket4 = await Lottery.collectTicketPrize(1,4);
+      // console.log("ticket4",winningTicket4)
+      const winningTicket5 = await Lottery.collectTicketPrize(1,5);
+      // console.log("ticket5",winningTicket5)
+      const ams = await Lottery.getTotalPrizeMoney(1)
+      console.log("prize money",ams)
 
       const balance = await Lottery.getBalance();
-      
-      console.log(balance)
     
+      console.log(balance)
+      
+      const price = await Lottery.getTicketPrize(1,1);
+      console.log("ticket price",price)
+      
+      const money = await Lottery.getLotteryMoneyCollected(1);
+      console.log(money);
+
+      
+      const balance2 = await Lottery.getBalance();
+    
+      console.log("balance after collection",balance2)
+
+      const mon2 = await Lottery.getMoneyCollected();
+      console.log("money collected",mon2)
+
       // await expect(await winningTicket).to.emit(Lottery, "Winner").withArgs(2,1);
 
 
