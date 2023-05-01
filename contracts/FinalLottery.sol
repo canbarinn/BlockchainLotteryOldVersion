@@ -428,4 +428,20 @@ contract FinalLottery {
     ) public view returns (uint) {
         return moneyCollectedForEachLottery[lottery_no];
     }
+
+
+    function getWinningTicket(
+        uint lottery_no) public view returns (uint,uint,uint) {
+        return (lotteryInfos[lottery_no].winningTickets[0],lotteryInfos[lottery_no].winningTickets[1],lotteryInfos[lottery_no].winningTickets[2]);
+        
+    }
+
+
+
+
+
+
 }
+
+
+

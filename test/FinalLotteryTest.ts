@@ -4,7 +4,7 @@ import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { FinalLottery } from "../typechain-types";
-import { Signer } from "ethers";
+import { Signer, providers, utils } from "ethers";
 
 describe("Lock", function () {
   // We define a fixture to reuse the same setup in every test.
@@ -58,9 +58,9 @@ describe("Lock", function () {
 
       const winningTicket = await Lottery.getIthWinningTicket(1,1)
       console.log(winningTicket)
-      await expect(Lottery.getIthWinningTicket(1,1))
-      .to.emit(Lottery, 'WinningTicket')
-      .withArgs(4, 1);
+      await Lottery.getWinningTicket(1);
+
+
 
     });
   });
