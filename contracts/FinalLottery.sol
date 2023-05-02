@@ -22,11 +22,12 @@ contract FinalLottery {
     mapping(uint => LotteryInfo) public lotteryInfos; //lotteryNo => LotteryInfo
     mapping(uint => uint) public moneyCollectedForEachLottery;
     mapping(uint => uint) public totalPrizeMoney;
+    mapping(uint => Ticket) ticketsFromOutside;
 
     function transferAmount(uint lottery_no, uint prize) public {
         totalPrizeMoney[lottery_no] += prize;
-        uint transferAmount = moneyCollectedForEachLottery[lottery_no] - prize;
-        moneyCollectedForEachLottery[lottery_no + 1] += transferAmount;
+        uint transferAmnt = moneyCollectedForEachLottery[lottery_no] - prize;
+        moneyCollectedForEachLottery[lottery_no + 1] += transferAmnt;
     }
 
     struct Ticket {
@@ -82,21 +83,23 @@ contract FinalLottery {
     }
 
     function buyTicket(bytes32 hash_rnd_number, int tier) public {
+        ticketNoCounter += 1;
         uint lottery_no = lotteryNoCalculator();
 
         // We have to check if the lottery before has already picked a winner when we buy tickets in the next round, not sure with indexing if it has to be -1 or -2
         if (lottery_no >= 3) {
             if (!(lotteryInfos[lottery_no - 2].winningTickets.length == 3)) {
                 //picks the winner for the lottery before
-            pickWinner(lottery_no-2);
-            totalPrizeMoney[lottery_no-2] = calculateTotalPriceValue(lottery_no-2);
-            transferAmount(lottery_no-2, totalPrizeMoney[lottery_no-2]);
+                pickWinner(lottery_no - 2);
+                totalPrizeMoney[lottery_no - 2] = calculateTotalPriceValue(
+                    lottery_no - 2
+                );
+                // transferAmount(lottery_no - 2, totalPrizeMoney[lottery_no - 2]);
             }
         }
 
         TicketTier ticketTier;
         require(tier == 1 || tier == 2 || tier == 3, "Wrong Input");
-        ticketNoCounter += 1;
         if (tier == 1) {
             ticketTier = TicketTier.Full;
         } else if (tier == 2) {
@@ -104,18 +107,29 @@ contract FinalLottery {
         } else if (tier == 3) {
             ticketTier = TicketTier.Quarter;
         }
+        uint time=block.timestamp;
 
         tickets[msg.sender][lottery_no].push(
             Ticket(
                 ticketNoCounter,
                 lottery_no,
                 hash_rnd_number,
-                block.timestamp,
+                time,
                 0,
                 true,
                 ticketTier
             )
         );
+        
+
+        ticketsFromOutside[ticketNoCounter].ticketNo = ticketNoCounter;
+        ticketsFromOutside[ticketNoCounter].lotteryNo = lottery_no;
+        ticketsFromOutside[ticketNoCounter].ticketHash = hash_rnd_number;
+        ticketsFromOutside[ticketNoCounter].ticketTimestamp = time;
+        ticketsFromOutside[ticketNoCounter].status = 0;
+        ticketsFromOutside[ticketNoCounter].active = true;
+        ticketsFromOutside[ticketNoCounter].ticketTier = ticketTier;
+
         lotteryBalance += getamount(ticketTier);
         lotteryInfos[lottery_no].ticketNosInLottery.push(ticketNoCounter);
         moneyCollectedForEachLottery[lottery_no] += getamount(ticketTier);
@@ -125,11 +139,11 @@ contract FinalLottery {
     function getamount(TicketTier tier) public returns (uint) {
         uint amount;
         if (tier == TicketTier.Full) {
-            amount = 8 * (10**10);
+            amount = 8 * (10 ** 1);
         } else if (tier == TicketTier.Half) {
-            amount = 4 * (10**10);
+            amount = 4 * (10 ** 1);
         } else if (tier == TicketTier.Full) {
-            amount = 2 * (10**10);
+            amount = 2 * (10 ** 1);
         }
         return amount;
     }
@@ -260,7 +274,7 @@ contract FinalLottery {
 
         uint numberofTickets = lotteryInfos[lottery_no]
             .ticketNosInLottery
-            .length;
+            .length-1;
         uint index1 = uint(keccak256(abi.encodePacked(block.timestamp))) %
             (numberofTickets);
 
@@ -282,28 +296,27 @@ contract FinalLottery {
     function calculateSinglePriceValue(
         uint thPrice,
         uint lottery_no
-    ) internal returns (uint) {
+    ) internal returns(uint) {
         uint prize;
 
         uint winnerTicketNo = lotteryInfos[lottery_no].ticketNosInLottery[
-            lotteryInfos[lottery_no].winningTickets[thPrice-1]
+            lotteryInfos[lottery_no].winningTickets[thPrice - 1]
         ];
-        (uint lotNo, uint index) = findTicketInfosFromNo(winnerTicketNo);
         if (thPrice == 1) {
             if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
+                ticketsFromOutside[winnerTicketNo].ticketTier ==
                 TicketTier.Full
             ) {
                 //prize = lotteryBalance / 2;
                 prize = moneyCollectedForEachLottery[lottery_no] / 2;
             } else if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
+                ticketsFromOutside[winnerTicketNo].ticketTier ==
                 TicketTier.Half
             ) {
                 //prize = lotteryBalance / 4;
                 prize = moneyCollectedForEachLottery[lottery_no] / 4;
             } else if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
+                ticketsFromOutside[winnerTicketNo].ticketTier ==
                 TicketTier.Quarter
             ) {
                 //prize = moneyCollectedForEachLottery[lottery_no] / 8;
@@ -313,20 +326,19 @@ contract FinalLottery {
             }
         } else if (thPrice == 2) {
             if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
+                ticketsFromOutside[winnerTicketNo].ticketTier ==
                 TicketTier.Full
             ) {
                 //prize = moneyCollectedForEachLottery[lottery_no] / 4;
                 prize = moneyCollectedForEachLottery[lottery_no] / 4;
             } else if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
+                ticketsFromOutside[winnerTicketNo].ticketTier ==
                 TicketTier.Half
             ) {
-                
                 //prize = moneyCollectedForEachLottery[lottery_no] / 8;
                 prize = moneyCollectedForEachLottery[lottery_no] / 8;
             } else if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
+                ticketsFromOutside[winnerTicketNo].ticketTier ==
                 TicketTier.Quarter
             ) {
                 //prize = moneyCollectedForEachLottery[lottery_no] / 16;
@@ -336,19 +348,19 @@ contract FinalLottery {
             }
         } else if (thPrice == 3) {
             if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
+                ticketsFromOutside[winnerTicketNo].ticketTier ==
                 TicketTier.Full
             ) {
                 //prize = moneyCollectedForEachLottery[lottery_no] / 8;
                 prize = moneyCollectedForEachLottery[lottery_no] / 8;
             } else if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
+                ticketsFromOutside[winnerTicketNo].ticketTier ==
                 TicketTier.Half
             ) {
                 //prize = moneyCollectedForEachLottery[lottery_no] / 16;
                 prize = moneyCollectedForEachLottery[lottery_no] / 16;
             } else if (
-                tickets[msg.sender][lottery_no][index].ticketTier ==
+                ticketsFromOutside[winnerTicketNo].ticketTier ==
                 TicketTier.Quarter
             ) {
                 //prize = moneyCollectedForEachLottery[lottery_no] / 32;
@@ -357,7 +369,7 @@ contract FinalLottery {
                 revert("Invalid operation.");
             }
         } else {
-            prize = 10 ** 9;
+            prize = 0;
         }
         return (prize);
     }
@@ -405,7 +417,7 @@ contract FinalLottery {
         if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
             pickWinner(lottery_no);
             totalPrizeMoney[lottery_no] = calculateTotalPriceValue(lottery_no);
-            transferAmount(lottery_no, totalPrizeMoney[lottery_no]);
+            // transferAmount(lottery_no, totalPrizeMoney[lottery_no]);
         }
         uint prize;
         string memory prizeName;
@@ -416,7 +428,7 @@ contract FinalLottery {
         uint thirdPrizeWinnerTicketNo = lotteryInfos[lottery_no]
             .ticketNosInLottery[lotteryInfos[lottery_no].winningTickets[2]];
         if (ticket_no == firstPrizeWinnerTicketNo) {
-             prize = calculateSinglePriceValue(1, lottery_no);
+            prize = calculateSinglePriceValue(1, lottery_no);
         } else if (ticket_no == secondPrizeWinnerTicketNo) {
             prize = calculateSinglePriceValue(2, lottery_no);
         } else if (ticket_no == thirdPrizeWinnerTicketNo) {
@@ -434,48 +446,42 @@ contract FinalLottery {
     This function transferes the leftover Money (substracted by the Price Money) to the actual round, is called in BuyTicket() and
      */
 
-function collectTicketPrize(
-    uint lottery_no,
-    uint ticket_no
-) public returns (uint) {
-    if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
+    function collectTicketPrize(
+        uint lottery_no,
+        uint ticket_no
+    ) public returns (uint) {
+        if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
             pickWinner(lottery_no);
             totalPrizeMoney[lottery_no] = calculateTotalPriceValue(lottery_no);
-            transferAmount(lottery_no, totalPrizeMoney[lottery_no]);
-    }
-    uint prizeIndex;
-    for (uint i = 0; i < 3; i++) {
-        if (
-            lotteryInfos[lottery_no].ticketNosInLottery[
-                lotteryInfos[lottery_no].winningTickets[i]
-            ] == ticket_no
-        ) {
-            prizeIndex = i;
-            break; // Exit the loop if the ticket is found
+            // transferAmount(lottery_no, totalPrizeMoney[lottery_no]);
         }
+        uint prizeIndex;
+        for (uint i = 0; i < 3; i++) {
+            if (
+                lotteryInfos[lottery_no].ticketNosInLottery[
+                    lotteryInfos[lottery_no].winningTickets[i]
+                ] == ticket_no
+            ) {
+                prizeIndex = i;
+                break; // Exit the loop if the ticket is found
+            }
+        }
+
+        uint prize = calculateSinglePriceValue(prizeIndex + 1, lottery_no);
+
+        lotteryBalance -= prize;
+        moneyCollectedForEachLottery[lottery_no] -= prize;
+        balance[msg.sender] += prize;
+        return prize;
     }
-
-    uint prize = calculateSinglePriceValue(prizeIndex + 1, lottery_no);
-
-    lotteryBalance -= prize;
-    moneyCollectedForEachLottery[lottery_no] -= prize;
-    balance[msg.sender] += prize;
-    return prize;
-}
-
-
-
-
-
-
-
-
-
 
     function getMoneyCollected() public view returns (uint amount) {
         return lotteryBalance;
     }
-    function getTotalPrizeMoney(uint lottery_no) public view returns (uint amount) {
+
+    function getTotalPrizeMoney(
+        uint lottery_no
+    ) public view returns (uint amount) {
         return totalPrizeMoney[lottery_no];
     }
 
@@ -499,17 +505,27 @@ function collectTicketPrize(
         return balance[msg.sender];
     }
 
-    function getTicketPrize(uint lottery_no, uint ticket_no) public view returns(uint) {
-    uint prize;
+    function getTicketPrize(
+        uint lottery_no,
+        uint ticket_no
+    ) public view returns (uint) {
+        uint prize;
         for (uint i = 0; i < 3; i++) {
             if (
                 lotteryInfos[lottery_no].ticketNosInLottery[
                     lotteryInfos[lottery_no].winningTickets[i]
                 ] == ticket_no
             ) {
-               prize=(i+1) * 500000;
+                prize = (i + 1) * 500000;
             }
         }
-    return prize;
+        return prize;
     }
+
+    function ticketCount(uint lottery_no) public view returns(uint) {
+        return lotteryInfos[lottery_no].ticketNosInLottery.length;
+    }
+
+
+
 }
