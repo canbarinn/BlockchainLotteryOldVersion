@@ -54,6 +54,7 @@ contract FinalLottery {
     event AmountOfPrize(string prizeName, uint prize);
     event WinningTicket(uint ticketNo, uint amount);
     event Winner(bool isWin);
+    event SinglePriceVal(uint totalPrice);
 
     function lotteryNoCalculator() internal returns (uint) {
         uint currentTime = block.timestamp;
@@ -89,16 +90,16 @@ contract FinalLottery {
          TicketTier ticketTier;
 
         if(tier == 2){
-            require(balance[msg.sender] > 2 * 10 ** 15 , "insufficient balance for quarter ticket");
+            require(balance[msg.sender] > 2 * 10 ** 10 , "insufficient balance for quarter ticket");
             ticketTier = TicketTier.Quarter;
             
         }
         else if(tier == 4){
-            require(balance[msg.sender] > 4 * 10 ** 15 , "insufficient balance half ticket");
+            require(balance[msg.sender] > 4 * 10 ** 10 , "insufficient balance half ticket");
              ticketTier = TicketTier.Half;
         }
         else if(tier == 8){
-            require(balance[msg.sender] > 8 * 10 ** 15 , "insufficient balance full ticket");
+            require(balance[msg.sender] > 8 * 10 ** 10 , "insufficient balance full ticket");
             ticketTier = TicketTier.Full;
         }
         else {
@@ -137,6 +138,7 @@ contract FinalLottery {
         ticketsFromOutside[ticketNoCounter].active = true;
         ticketsFromOutside[ticketNoCounter].ticketTier = ticketTier;
 
+//Todo this gives error
         balance[msg.sender] -= getamount(ticketTier);
         lotteryBalance += getamount(ticketTier);
         lotteryInfos[lottery_no].ticketNosInLottery.push(ticketNoCounter);
@@ -313,11 +315,11 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
     function calculateSinglePriceValue(
         uint thPrice,
         uint lottery_no
-    ) internal returns (uint) {
+    ) public returns (uint) {
 
         require(thPrice==1||thPrice==2||thPrice==3, "Invalid price type!");
         require(lottery_no <= lotteryNoCalculator(), "Invalid lottery number!");
-
+        require(lotteryInfos[lottery_no].winningTickets.length == 3, "There is no winning ticket selected yet!");
         uint prize;
 
         uint winnerTicketNo = lotteryInfos[lottery_no].ticketNosInLottery[
@@ -386,6 +388,7 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
         } else {
             prize = 0;
         }
+        emit SinglePriceVal(prize);
         return (prize);
     }
 
@@ -427,7 +430,7 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
     ) public returns (uint) {
         //this requirement assures that the buyer is already allowed to check his ticket /buying phase is over because he has to wait until buying time is over
         require(lottery_no <= (lotteryNoCalculator()), "Lottery you are requesting has not started yet!" );
-        require(ticket_no <= ticketNoCounter, "Lottery you are requesting has not started yet!" );
+        require(ticket_no <= ticketNoCounter, "The ticket you are requesting does not exist" );
         require(ticketsFromOutside[ticket_no].owner == msg.sender, "You are not the owner!");
         require(ticketsFromOutside[ticket_no].status == 1, "You have not revealed the random number yet!");
 
@@ -493,7 +496,13 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
         uint lottery_no,
         uint ticket_no
     ) public returns (uint) {
+        
+        require(lottery_no <= (lotteryNoCalculator()), "Lottery you are requesting has not started yet!" );
+        require(ticket_no <= ticketNoCounter, "The ticket you are requesting does not exist" );
         require(ticketsFromOutside[ticket_no].status == 1, "not revealed");
+        require(ticketsFromOutside[ticket_no].owner == msg.sender, "You are not the owner!");
+        require(lotteryInfos[lottery_no].winningTickets.length == 3, "Winners ticket have not been selected yet");
+
         if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
             pickWinner(lottery_no);
             totalPrizeMoney[lottery_no] = calculateTotalPriceValue(lottery_no);
@@ -567,6 +576,11 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
         uint lottery_no,
         uint ticket_no
     ) public view returns (uint) {
+        // require(lottery_no <= (lotteryNoCalculator()), "Lottery you are requesting has not started yet!" );
+        require(ticket_no <= ticketNoCounter, "The ticket you are requesting does not exist" );
+        require(ticketsFromOutside[ticket_no].status == 1, "not revealed");
+        require(ticketsFromOutside[ticket_no].owner == msg.sender, "You are not the owner!");
+        require(lotteryInfos[lottery_no].winningTickets.length == 3, "Winners ticket have not been selected yet");
         uint prize;
         for (uint i = 0; i < 3; i++) {
             if (
