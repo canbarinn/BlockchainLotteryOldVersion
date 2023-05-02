@@ -24,11 +24,6 @@ contract FinalLottery {
     mapping(uint => uint) public totalPrizeMoney;
     mapping(uint => Ticket) ticketsFromOutside;
 
-    function transferAmount(uint lottery_no, uint prize) public {
-        totalPrizeMoney[lottery_no] += prize;
-        uint transferAmnt = moneyCollectedForEachLottery[lottery_no] - prize;
-        moneyCollectedForEachLottery[lottery_no + 1] += transferAmnt;
-    }
 
     struct Ticket {
         address owner;
@@ -75,6 +70,11 @@ contract FinalLottery {
         // console.log(balance[msg.sender]);
     }
 
+    function transferAmount(uint lottery_no, uint prize) public {
+        totalPrizeMoney[lottery_no] += prize;
+        uint transferAmnt = moneyCollectedForEachLottery[lottery_no] - prize;
+        moneyCollectedForEachLottery[lottery_no + 1] += transferAmnt;
+    }
     function withdrawEther(uint amount) public payable {
         require(balance[msg.sender] >= amount, "insufficient balance");
         balance[msg.sender] -= amount;
@@ -133,6 +133,17 @@ contract FinalLottery {
         moneyCollectedForEachLottery[lottery_no] += getamount(ticketTier);
     }
 
+        function revealRndNumber(uint ticket_no, uint random_number) public {
+        // require(lotteryNoCounter > 1, "early");
+        
+        bytes32 hash = keccak256(abi.encodePacked(msg.sender, random_number));
+        (uint lottery_no, uint index) = findTicketInfosFromNo(ticket_no);
+        if(hash == ticketsFromOutside[ticket_no].ticketHash) {
+            ticketsFromOutside[ticket_no].status =1;
+            tickets[msg.sender][lottery_no][index].status = 1;
+        }
+    }
+
     function getamount(TicketTier tier) public pure returns (uint) {
         uint amount;
         if (tier == TicketTier.Full) {
@@ -157,6 +168,7 @@ contract FinalLottery {
         moneyCollectedForEachLottery[lottery_no] -= amount;
         lotteryBalance -= amount;
         tickets[msg.sender][lottery_no][ticket_index].active = false;
+        ticketsFromOutside[ticket_no].active = false;
     }
 
     function getIthOwnedTicketNo(
@@ -446,6 +458,7 @@ contract FinalLottery {
         uint lottery_no,
         uint ticket_no
     ) public returns (uint) {
+        require(ticketsFromOutside[ticket_no].status == 1, "not revealed");
         if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
             pickWinner(lottery_no);
             totalPrizeMoney[lottery_no] = calculateTotalPriceValue(lottery_no);
@@ -558,5 +571,9 @@ contract FinalLottery {
         return lotteryInfos[lottery_no].ticketNosInLottery;
     }
 
+    function hashOfANum(uint num) public view returns(bytes32) {
+        return keccak256(abi.encodePacked(num));
+
+    }
 
 }
