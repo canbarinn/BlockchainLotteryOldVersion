@@ -35,7 +35,6 @@ contract FinalLottery {
         uint ticketNo;
         uint lotteryNo;
         bytes32 ticketHash;
-        uint ticketTimestamp;
         uint8 status;
         bool active;
         TicketTier ticketTier; //0 = full ticket, 1 = half ticket, 2 = quarter ticket
@@ -52,7 +51,6 @@ contract FinalLottery {
         uint ticketNo,
         uint lotteryNo,
         bytes32 ticketHash,
-        uint ticketTimestamp,
         uint8 status,
         bool active,
         TicketTier ticketTier
@@ -108,7 +106,6 @@ contract FinalLottery {
         } else if (tier == 3) {
             ticketTier = TicketTier.Quarter;
         }
-        uint time = block.timestamp;
 
         tickets[msg.sender][lottery_no].push(
             Ticket(
@@ -116,7 +113,6 @@ contract FinalLottery {
                 ticketNoCounter,
                 lottery_no,
                 hash_rnd_number,
-                time,
                 0,
                 true,
                 ticketTier
@@ -127,7 +123,6 @@ contract FinalLottery {
         ticketsFromOutside[ticketNoCounter].ticketNo = ticketNoCounter;
         ticketsFromOutside[ticketNoCounter].lotteryNo = lottery_no;
         ticketsFromOutside[ticketNoCounter].ticketHash = hash_rnd_number;
-        ticketsFromOutside[ticketNoCounter].ticketTimestamp = time;
         ticketsFromOutside[ticketNoCounter].status = 0;
         ticketsFromOutside[ticketNoCounter].active = true;
         ticketsFromOutside[ticketNoCounter].ticketTier = ticketTier;
@@ -175,26 +170,7 @@ contract FinalLottery {
         return (ticketNo, ticketStatus);
     }
 
-    function findTicketInfosFromNo(uint ticket_no) public returns (uint, uint) {
-        uint lotteryNoCounter = lotteryNoCalculator();
-        for (
-            uint lottery_no = 0;
-            lottery_no < lotteryNoCounter + 1;
-            lottery_no++
-        ) {
-            for (
-                uint index = 0;
-                index < tickets[msg.sender][lottery_no].length;
-                index++
-            ) {
-                if (
-                    tickets[msg.sender][lottery_no][index].ticketNo == ticket_no
-                ) {
-                    return (lottery_no, index);
-                }
-            }
-        }
-    }
+
 
     function getLastOwnedTicketNo(
         uint lottery_no
@@ -213,7 +189,6 @@ contract FinalLottery {
             tickets[msg.sender][lottery_no][index].ticketNo,
             tickets[msg.sender][lottery_no][index].lotteryNo,
             tickets[msg.sender][lottery_no][index].ticketHash,
-            tickets[msg.sender][lottery_no][index].ticketTimestamp,
             tickets[msg.sender][lottery_no][index].status,
             tickets[msg.sender][lottery_no][index].active,
             tickets[msg.sender][lottery_no][index].ticketTier
@@ -446,6 +421,26 @@ contract FinalLottery {
     /**
     This function transferes the leftover Money (substracted by the Price Money) to the actual round, is called in BuyTicket() and
      */
+    function findTicketInfosFromNo(uint ticket_no) public returns (uint, uint) {
+        uint lotteryNoCounter = lotteryNoCalculator();
+        for (
+            uint lottery_no = 0;
+            lottery_no < lotteryNoCounter + 1;
+            lottery_no++
+        ) {
+            for (
+                uint index = 0;
+                index < tickets[msg.sender][lottery_no].length;
+                index++
+            ) {
+                if (
+                    tickets[msg.sender][lottery_no][index].ticketNo == ticket_no
+                ) {
+                    return (lottery_no, index);
+                }
+            }
+        }
+    }
 
     function collectTicketPrize(
         uint lottery_no,
@@ -490,22 +485,6 @@ contract FinalLottery {
         uint lottery_no
     ) public view returns (uint) {
         return moneyCollectedForEachLottery[lottery_no];
-    }
-
-    function getWinningTicket(
-        uint lottery_no
-    ) public view returns (uint, uint, uint) {
-        return (
-            lotteryInfos[lottery_no].ticketNosInLottery[
-                lotteryInfos[lottery_no].winningTickets[0]
-            ],
-            lotteryInfos[lottery_no].ticketNosInLottery[
-                lotteryInfos[lottery_no].winningTickets[1]
-            ],
-            lotteryInfos[lottery_no].ticketNosInLottery[
-                lotteryInfos[lottery_no].winningTickets[2]
-            ]
-        );
     }
 
     function getWinningTicket1(uint lottery_no) public view returns (uint) {
@@ -559,13 +538,12 @@ contract FinalLottery {
 
 
 
-    function getTicketInfos(uint ticket_no) public view returns(address,uint,uint,bytes32,uint,uint8,bool,TicketTier) {
+    function getTicketInfos(uint ticket_no) public view returns(address,uint,uint,bytes32,uint8,bool,TicketTier) {
         return (
             ticketsFromOutside[ticket_no].owner,
             ticketsFromOutside[ticket_no].ticketNo,
             ticketsFromOutside[ticket_no].lotteryNo,
             ticketsFromOutside[ticket_no].ticketHash,
-            ticketsFromOutside[ticket_no].ticketTimestamp,
             ticketsFromOutside[ticket_no].status,
             ticketsFromOutside[ticket_no].active,
             ticketsFromOutside[ticket_no].ticketTier
