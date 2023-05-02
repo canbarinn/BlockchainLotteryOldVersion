@@ -89,20 +89,17 @@ contract FinalLottery {
          TicketTier ticketTier;
 
         if(tier == 2){
-            require(balance[msg.sender] > 2 * 10 ** 15 , "insufficient balance for quarter ticket");
+            require(balance[msg.sender] > 2 * 10 ** 10 , "insufficient balance for quarter ticket");
             ticketTier = TicketTier.Quarter;
             
         }
         else if(tier == 4){
-            require(balance[msg.sender] > 4 * 10 ** 15 , "insufficient balance half ticket");
+            require(balance[msg.sender] > 4 * 10 ** 10 , "insufficient balance half ticket");
              ticketTier = TicketTier.Half;
         }
         else if(tier == 8){
-            require(balance[msg.sender] > 8 * 10 ** 15 , "insufficient balance full ticket");
+            require(balance[msg.sender] > 8 * 10 ** 10 , "insufficient balance full ticket");
             ticketTier = TicketTier.Full;
-        }
-        else {
-            revert("Wrong tier Input");
         }
 
         // We have to check if the lottery before has already picked a winner when we buy tickets in the next round, not sure with indexing if it has to be -1 or -2
@@ -160,11 +157,11 @@ contract FinalLottery {
     function getamount(TicketTier tier) public pure returns (uint) {
         uint amount;
         if (tier == TicketTier.Full) {
-            amount = 8 * (10 ** 15);
+            amount = 8 * (10 );
         } else if (tier == TicketTier.Half) {
-            amount = 4 * (10 ** 15);
+            amount = 4 * (10 );
         } else if (tier == TicketTier.Full) {
-            amount = 2 * (10 ** 15);
+            amount = 2 * (10 );
         }
         else {
             amount = 0;
@@ -282,7 +279,7 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
             revert("There is not enough ticket for picking winners, lottery is cancelled!");
             // TODO: make the tickets refundable here
         }
-        if (lotteryInfos[lottery_no].winningTickets.length == 0) {
+        if (lotteryInfos[lottery_no].winningTickets.length == 3) {
             revert("Winners are already selected.");
             // TODO: make the tickets refundable here
         }
@@ -313,7 +310,7 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
     function calculateSinglePriceValue(
         uint thPrice,
         uint lottery_no
-    ) internal returns (uint) {
+    ) public returns (uint) {
 
         require(thPrice==1||thPrice==2||thPrice==3, "Invalid price type!");
         require(lottery_no <= lotteryNoCalculator(), "Invalid lottery number!");
@@ -607,7 +604,7 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
     }
 
     function hashOfANum(uint num) public view returns(bytes32) {
-        return keccak256(abi.encodePacked(num));
+        return keccak256(abi.encodePacked(msg.sender, num));
 
     }
 
