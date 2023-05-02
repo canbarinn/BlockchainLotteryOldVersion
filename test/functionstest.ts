@@ -148,12 +148,16 @@ describe("Lock", function () {
     });
 
     xit("getLastOwnedTicketNo", async function () {
+<<<<<<< HEAD
         await Lottery.connect(accounts[6]).depositEther( { value: 1000000});
+=======
+        await Lottery.connect(accounts[6]).depositEther( { value: 100 * 10 ** 10});
+>>>>>>> 290fb498f56deac11a361c00bf8a31c698771767
 
-        await Lottery.connect(accounts[6]).buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 1);
-        await Lottery.connect(accounts[6]).buyTicket("0x9abc19dab27cd34d3fcdee5db435600ca1a7c8f6e33e8201215db86aa4b96795", 1);
-        await Lottery.connect(accounts[6]).buyTicket("0xe455bf8ea6e7463a1046a0b52804526e119b4bf5136279614e0b1e8e296a4e2d", 1);
-        await Lottery.connect(accounts[6]).buyTicket("0x55b33ce565978561a1247ccce87003f6ddd588298f404e747ed025a86773536d", 1);
+        await Lottery.connect(accounts[6]).buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 2);
+        await Lottery.connect(accounts[6]).buyTicket("0x9abc19dab27cd34d3fcdee5db435600ca1a7c8f6e33e8201215db86aa4b96795", 2);
+        await Lottery.connect(accounts[6]).buyTicket("0xe455bf8ea6e7463a1046a0b52804526e119b4bf5136279614e0b1e8e296a4e2d", 2);
+        await Lottery.connect(accounts[6]).buyTicket("0x55b33ce565978561a1247ccce87003f6ddd588298f404e747ed025a86773536d", 2);
 
 
         const lastTicket: [BigNumber, BigNumber] = await Lottery.connect(accounts[6]).getLastOwnedTicketNo(1);
@@ -161,6 +165,7 @@ describe("Lock", function () {
         expect(lastTicket[1]).eq(0);
         
     });
+<<<<<<< HEAD
     it("calculateSinglePriceValue", async function () {
       await Lottery.connect(accounts[6]).depositEther( { value: 300 * 10 ** 10});
 
@@ -171,6 +176,19 @@ describe("Lock", function () {
       await Lottery.connect(accounts[6]).buyTicket("0x23be5b597bb2efbf6d693749acabd6f758f688025cc6ae14cc2a557d7790eeab", 2);
       await Lottery.connect(accounts[6]).buyTicket("0x23be5b597bb2efbf6d693749acabd6f758f688025cc6ae14cc2a557d7790eeab", 2);
       await Lottery.connect(accounts[6]).buyTicket("0x23be5b597bb2efbf6d693749acabd6f758f688025cc6ae14cc2a557d7790eeab", 2);
+=======
+
+    it("calculateSinglePriceValue", async function () {
+      await Lottery.connect(accounts[6]).depositEther( { value: 300 * 10 ** 10});
+
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
+>>>>>>> 290fb498f56deac11a361c00bf8a31c698771767
       //
       const NosInLottery = await Lottery.ticketNosInLotteryGetter(1);
       console.log(NosInLottery);
@@ -190,17 +208,30 @@ describe("Lock", function () {
       await Lottery.connect(accounts[6]).checkIfTicketWon(1,1);
       
 
+<<<<<<< HEAD
       const singlePriceValue = await Lottery.connect(accounts[6]).calculateSinglePriceValue(1,1);
 
 
     await expect(singlePriceValue).to.emit(Lottery, "SinglePriceValue").withArgs(2,1);
+=======
+      //const singlePriceValue = await Lottery.connect(accounts[6]).calculateSinglePriceValue(1,1);
+
+
+    //await expect(await singlePriceValue).to.emit(Lottery, "Winner").withArgs(2,1);
+>>>>>>> 290fb498f56deac11a361c00bf8a31c698771767
   });
 
   xit("Testrsgergrdgb", async function () {
   const number = 3;
+<<<<<<< HEAD
       const hash = await ethers.utils.solidityKeccak256(["address","uint"], [accounts[6].address,number]);
       console.log(hash);
       const hash2 = await Lottery.connect(accounts[6]).hashOfANum(3);
+=======
+      const hash = await ethers.utils.solidityKeccak256(["uint"], [number]);
+      console.log(hash);
+      const hash2 = await Lottery.hashOfANum(3);
+>>>>>>> 290fb498f56deac11a361c00bf8a31c698771767
       console.log(hash2);
 });});
 });
