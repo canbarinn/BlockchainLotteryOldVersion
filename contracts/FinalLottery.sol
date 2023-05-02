@@ -30,8 +30,8 @@ contract FinalLottery {
         uint ticketNo;
         uint lotteryNo;
         bytes32 ticketHash;
-        uint8 status;
-        bool active;
+        uint8 status; //revealed or not
+        bool active; //Todo Can will add modifier to that
         TicketTier ticketTier; //0 = full ticket, 1 = half ticket, 2 = quarter ticket
     }
 
@@ -72,9 +72,11 @@ contract FinalLottery {
 
     function transferAmount(uint lottery_no, uint prize) public {
         totalPrizeMoney[lottery_no] += prize;
+        require(moneyCollectedForEachLottery[lottery_no] >= prize, "Lottery is invalid, because there is not enough money in the Lottery for the prizes");
         uint transferAmnt = moneyCollectedForEachLottery[lottery_no] - prize;
         moneyCollectedForEachLottery[lottery_no + 1] += transferAmnt;
     }
+
     function withdrawEther(uint amount) public payable {
         require(balance[msg.sender] >= amount, "insufficient balance");
         balance[msg.sender] -= amount;
@@ -84,6 +86,24 @@ contract FinalLottery {
     function buyTicket(bytes32 hash_rnd_number, int tier) public {
         ticketNoCounter += 1;
         uint lottery_no = lotteryNoCalculator();
+         TicketTier ticketTier;
+
+        if(tier == 2){
+            require(balance[msg.sender] > 2 * 10 ** 15 , "insufficient balance for quarter ticket");
+            ticketTier = TicketTier.Quarter;
+            
+        }
+        else if(tier == 4){
+            require(balance[msg.sender] > 4 * 10 ** 15 , "insufficient balance half ticket");
+             ticketTier = TicketTier.Half;
+        }
+        else if(tier == 8){
+            require(balance[msg.sender] > 8 * 10 ** 15 , "insufficient balance full ticket");
+            ticketTier = TicketTier.Full;
+        }
+        else {
+            revert("Wrong tier Input");
+        }
 
         // We have to check if the lottery before has already picked a winner when we buy tickets in the next round, not sure with indexing if it has to be -1 or -2
         if (lottery_no >= 3) {
@@ -95,16 +115,6 @@ contract FinalLottery {
                 );
                 transferAmount(lottery_no - 2, totalPrizeMoney[lottery_no - 2]);
             }
-        }
-
-        TicketTier ticketTier;
-        require(tier == 1 || tier == 2 || tier == 3, "Wrong Input");
-        if (tier == 1) {
-            ticketTier = TicketTier.Full;
-        } else if (tier == 2) {
-            ticketTier = TicketTier.Half;
-        } else if (tier == 3) {
-            ticketTier = TicketTier.Quarter;
         }
 
         tickets[msg.sender][lottery_no].push(
@@ -133,9 +143,12 @@ contract FinalLottery {
         moneyCollectedForEachLottery[lottery_no] += getamount(ticketTier);
     }
 
-        function revealRndNumber(uint ticket_no, uint random_number) public {
+    function revealRndNumber(uint ticket_no, uint random_number) public {
         // require(lotteryNoCounter > 1, "early");
-        
+        require(ticket_no <= ticketNoCounter, "There is no ticket with this number in the system");
+        require(ticketsFromOutside[ticket_no].owner == msg.sender, "You are not the owner of this ticket");
+        require(ticketsFromOutside[ticket_no].lotteryNo == (lotteryNoCalculator() -1), "incorrect time to reveal" );
+        require(ticketsFromOutside[ticket_no].status == 0, "Sorry, you have already revealed" );
         bytes32 hash = keccak256(abi.encodePacked(msg.sender, random_number));
         (uint lottery_no, uint index) = findTicketInfosFromNo(ticket_no);
         if(hash == ticketsFromOutside[ticket_no].ticketHash) {
@@ -147,19 +160,25 @@ contract FinalLottery {
     function getamount(TicketTier tier) public pure returns (uint) {
         uint amount;
         if (tier == TicketTier.Full) {
-            amount = 8 * (10 ** 1);
+            amount = 8 * (10 ** 15);
         } else if (tier == TicketTier.Half) {
-            amount = 4 * (10 ** 1);
+            amount = 4 * (10 ** 15);
         } else if (tier == TicketTier.Full) {
-            amount = 2 * (10 ** 1);
+            amount = 2 * (10 ** 15);
+        }
+        else {
+            amount = 0;
         }
         return amount;
     }
 
     function collectTicketRefund(uint ticket_no) public {
+        require(ticket_no <= ticketNoCounter, "There is no ticket with this number in the system");
+        require(ticketsFromOutside[ticket_no].owner == msg.sender, "You are not the owner of this ticket");
+        require(ticketsFromOutside[ticket_no].lotteryNo == (lotteryNoCalculator()), "You cannot refund anymore" );
+        require(ticketsFromOutside[ticket_no].status == 0, "You cannot refund anymore, ticket is already revealed" );
         uint lottery_no;
         uint ticket_index;
-
         (lottery_no, ticket_index) = findTicketInfosFromNo(ticket_no);
         TicketTier tier = tickets[msg.sender][lottery_no][ticket_index]
             .ticketTier;
@@ -174,7 +193,9 @@ contract FinalLottery {
     function getIthOwnedTicketNo(
         uint i,
         uint lottery_no
-    ) public view returns (uint, uint8 status) {
+    ) public returns (uint, uint8 status) {
+        require(lottery_no <= (lotteryNoCalculator()), "Lottery you are requesting has not started yet" );
+        require(tickets[msg.sender][lottery_no].length >= i, "You don`t have that many tickets");
         Ticket memory targetTicket;
         targetTicket = tickets[msg.sender][lottery_no][i];
         uint ticketNo = targetTicket.ticketNo;
