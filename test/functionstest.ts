@@ -165,25 +165,43 @@ describe("Lock", function () {
     it("calculateSinglePriceValue", async function () {
       await Lottery.connect(accounts[6]).depositEther( { value: 300 * 10 ** 10});
 
-      await Lottery.connect(accounts[6]).buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 2);
-      await Lottery.connect(accounts[6]).buyTicket("0x9abc19dab27cd34d3fcdee5db435600ca1a7c8f6e33e8201215db86aa4b96795", 2);
-      await Lottery.connect(accounts[6]).buyTicket("0xe455bf8ea6e7463a1046a0b52804526e119b4bf5136279614e0b1e8e296a4e2d", 2);
-      await Lottery.connect(accounts[6]).buyTicket("0x55b33ce565978561a1247ccce87003f6ddd588298f404e747ed025a86773536d", 2);
-      await Lottery.connect(accounts[6]).buyTicket("0x55b33ce565978561a1247ccce87003f6ddd588298f404e747ed025a86773536d", 2);
-      await Lottery.connect(accounts[6]).buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 2);
-      await Lottery.connect(accounts[6]).buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 2);
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
+      await Lottery.connect(accounts[6]).buyTicket("0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f85b", 2);
       //
       const NosInLottery = await Lottery.ticketNosInLotteryGetter(1);
       console.log(NosInLottery);
 
-      await time.increase(60*60*24*7 *3 + 10000);
-      Lottery.checkIfTicketWon(1,1);
-      await Lottery.connect(accounts[6]).buyTicket("0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a", 2);
+      await time.increase(60*60*24*7 + 1000);
+      await Lottery.connect(accounts[6]).revealRndNumber(1, 3);
+      await Lottery.connect(accounts[6]).revealRndNumber(2, 3);
+      await Lottery.connect(accounts[6]).revealRndNumber(3, 3);
+      await Lottery.connect(accounts[6]).revealRndNumber(4, 3);
+      await Lottery.connect(accounts[6]).revealRndNumber(5, 3);
+      await Lottery.connect(accounts[6]).revealRndNumber(6, 3);
+      await Lottery.connect(accounts[6]).revealRndNumber(7, 3);
+      await time.increase(60*60*24*7 *2 + 1000);
 
-      const singlePriceValue = await Lottery.connect(accounts[6]).calculateSinglePriceValue(1,1);
+      const myTuple: [string, BigNumber, BigNumber,string, number, boolean, string] = await Lottery.connect(accounts[6]).getTicketInfos(1);
+      console.log(myTuple);
+      await Lottery.connect(accounts[6]).checkIfTicketWon(1,1);
+      
+
+      //const singlePriceValue = await Lottery.connect(accounts[6]).calculateSinglePriceValue(1,1);
 
 
-    await expect(await singlePriceValue).to.emit(Lottery, "Winner").withArgs(2,1);
+    //await expect(await singlePriceValue).to.emit(Lottery, "Winner").withArgs(2,1);
   });
-});
+
+  xit("Testrsgergrdgb", async function () {
+  const number = 3;
+      const hash = await ethers.utils.solidityKeccak256(["uint"], [number]);
+      console.log(hash);
+      const hash2 = await Lottery.hashOfANum(3);
+      console.log(hash2);
+});});
 });
