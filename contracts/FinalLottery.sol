@@ -208,7 +208,8 @@ contract FinalLottery {
     function getLastOwnedTicketNo(
         uint lottery_no
     ) public view returns (uint, uint8) {
-        uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
+     require(tickets[msg.sender][lottery_no].length > 0, "You don`t have any tickets");
+uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
         return (
             tickets[msg.sender][lottery_no][lastIndex].ticketNo,
             tickets[msg.sender][lottery_no][lastIndex].status
@@ -228,7 +229,7 @@ contract FinalLottery {
         );
     }
 
-    function getRandomNumber() public view returns (uint) {
+    function getRandomNumber() internal view returns (uint) {
         return uint(keccak256(abi.encodePacked(block.timestamp)));
     }
 
@@ -278,9 +279,15 @@ contract FinalLottery {
 
     function pickWinner(uint lottery_no) private {
         if (lotteryInfos[lottery_no].ticketNosInLottery.length < 3) {
-            revert("not enough tickets");
+            revert("There is not enough ticket for picking winners, lottery is cancelled!");
             // TODO: make the tickets refundable here
         }
+        if (lotteryInfos[lottery_no].winningTickets.length == 0) {
+            revert("Winners are already selected.");
+            // TODO: make the tickets refundable here
+        }
+        require(lottery_no <= lotteryNoCalculator(), "Invalid lottery number!");
+
 
         uint numberofTickets = lotteryInfos[lottery_no]
             .ticketNosInLottery
@@ -307,6 +314,10 @@ contract FinalLottery {
         uint thPrice,
         uint lottery_no
     ) internal returns (uint) {
+
+        require(thPrice==1||thPrice==2||thPrice==3, "Invalid price type!");
+        require(lottery_no <= lotteryNoCalculator(), "Invalid lottery number!");
+
         uint prize;
 
         uint winnerTicketNo = lotteryInfos[lottery_no].ticketNosInLottery[
@@ -382,7 +393,7 @@ contract FinalLottery {
     this function calculates the total value of the winners tickets in a specifiv lottery, has to be substracted from the total lottery balance when
      */
     //needs more requirements, for example if the winners tickets have been determined
-    function calculateTotalPriceValue(uint lottery_no) public returns (uint) {
+    function calculateTotalPriceValue(uint lottery_no) private returns (uint) {
         uint firstprice = calculateSinglePriceValue(1, lottery_no);
         uint secondprice = calculateSinglePriceValue(2, lottery_no);
         uint thirdprice = calculateSinglePriceValue(3, lottery_no);
@@ -394,6 +405,9 @@ contract FinalLottery {
         uint i,
         uint lottery_no
     ) public returns (uint ticket_no, uint amount) {
+        require(lottery_no <= (lotteryNoCalculator()), "Lottery you are requesting has not started yet!" );
+        require(lotteryInfos[lottery_no].winningTickets.length == 3, "There is no winning ticket selected yet!");
+        require(i==1||i==2||i==3, "Invalid number of winning ticket!");
         uint ticket_index = lotteryInfos[lottery_no].winningTickets[i - 1];
         ticket_no = lotteryInfos[lottery_no].ticketNosInLottery[ticket_index];
 
@@ -412,10 +426,10 @@ contract FinalLottery {
         uint ticket_no
     ) public returns (uint) {
         //this requirement assures that the buyer is already allowed to check his ticket /buying phase is over because he has to wait until buying time is over
-        require(
-            lottery_no != lotteryNoCalculator(),
-            "You have to wait for the reveal stage"
-        );
+        require(lottery_no <= (lotteryNoCalculator()), "Lottery you are requesting has not started yet!" );
+        require(ticket_no <= ticketNoCounter, "Lottery you are requesting has not started yet!" );
+        require(ticketsFromOutside[ticket_no].owner == msg.sender, "You are not the owner!");
+        require(ticketsFromOutside[ticket_no].status == 1, "You have not revealed the random number yet!");
 
         //picks winners tickets if they haven`t been chosen before
         if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
