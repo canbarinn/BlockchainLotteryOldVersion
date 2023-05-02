@@ -32,7 +32,7 @@ export interface FinalLotteryInterface extends utils.Interface {
   functions: {
     "balance(address)": FunctionFragment;
     "buyTicket(bytes32,int256)": FunctionFragment;
-    "calculateTotalPriceValue(uint256)": FunctionFragment;
+    "calculateSinglePriceValue(uint256,uint256)": FunctionFragment;
     "checkIfTicketWon(uint256,uint256)": FunctionFragment;
     "collectTicketPrize(uint256,uint256)": FunctionFragment;
     "collectTicketRefund(uint256)": FunctionFragment;
@@ -44,14 +44,21 @@ export interface FinalLotteryInterface extends utils.Interface {
     "getLastOwnedTicketNo(uint256)": FunctionFragment;
     "getLotteryMoneyCollected(uint256)": FunctionFragment;
     "getMoneyCollected()": FunctionFragment;
-    "getRandomNumber()": FunctionFragment;
+    "getOwner(uint256)": FunctionFragment;
     "getTicketInfo(uint256)": FunctionFragment;
+    "getTicketInfos(uint256)": FunctionFragment;
     "getTicketPrize(uint256,uint256)": FunctionFragment;
     "getTotalPrizeMoney(uint256)": FunctionFragment;
-    "getWinningTicket(uint256)": FunctionFragment;
+    "getWinningTicket1(uint256)": FunctionFragment;
+    "getWinningTicket2(uint256)": FunctionFragment;
+    "getWinningTicket3(uint256)": FunctionFragment;
     "getamount(uint8)": FunctionFragment;
+    "hashOfANum(uint256)": FunctionFragment;
     "lotteryInfos(uint256)": FunctionFragment;
     "moneyCollectedForEachLottery(uint256)": FunctionFragment;
+    "revealRndNumber(uint256,uint256)": FunctionFragment;
+    "ticketCount(uint256)": FunctionFragment;
+    "ticketNosInLotteryGetter(uint256)": FunctionFragment;
     "tickets(address,uint256,uint256)": FunctionFragment;
     "totalPrizeMoney(uint256)": FunctionFragment;
     "transferAmount(uint256,uint256)": FunctionFragment;
@@ -62,7 +69,7 @@ export interface FinalLotteryInterface extends utils.Interface {
     nameOrSignatureOrTopic:
       | "balance"
       | "buyTicket"
-      | "calculateTotalPriceValue"
+      | "calculateSinglePriceValue"
       | "checkIfTicketWon"
       | "collectTicketPrize"
       | "collectTicketRefund"
@@ -74,14 +81,21 @@ export interface FinalLotteryInterface extends utils.Interface {
       | "getLastOwnedTicketNo"
       | "getLotteryMoneyCollected"
       | "getMoneyCollected"
-      | "getRandomNumber"
+      | "getOwner"
       | "getTicketInfo"
+      | "getTicketInfos"
       | "getTicketPrize"
       | "getTotalPrizeMoney"
-      | "getWinningTicket"
+      | "getWinningTicket1"
+      | "getWinningTicket2"
+      | "getWinningTicket3"
       | "getamount"
+      | "hashOfANum"
       | "lotteryInfos"
       | "moneyCollectedForEachLottery"
+      | "revealRndNumber"
+      | "ticketCount"
+      | "ticketNosInLotteryGetter"
       | "tickets"
       | "totalPrizeMoney"
       | "transferAmount"
@@ -97,8 +111,8 @@ export interface FinalLotteryInterface extends utils.Interface {
     values: [PromiseOrValue<BytesLike>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: "calculateTotalPriceValue",
-    values: [PromiseOrValue<BigNumberish>]
+    functionFragment: "calculateSinglePriceValue",
+    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
     functionFragment: "checkIfTicketWon",
@@ -145,11 +159,15 @@ export interface FinalLotteryInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "getRandomNumber",
-    values?: undefined
+    functionFragment: "getOwner",
+    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
     functionFragment: "getTicketInfo",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getTicketInfos",
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
@@ -161,11 +179,23 @@ export interface FinalLotteryInterface extends utils.Interface {
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: "getWinningTicket",
+    functionFragment: "getWinningTicket1",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getWinningTicket2",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getWinningTicket3",
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
     functionFragment: "getamount",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "hashOfANum",
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
@@ -174,6 +204,18 @@ export interface FinalLotteryInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "moneyCollectedForEachLottery",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "revealRndNumber",
+    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "ticketCount",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "ticketNosInLotteryGetter",
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
@@ -200,7 +242,7 @@ export interface FinalLotteryInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "balance", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "buyTicket", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "calculateTotalPriceValue",
+    functionFragment: "calculateSinglePriceValue",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -244,12 +286,13 @@ export interface FinalLotteryInterface extends utils.Interface {
     functionFragment: "getMoneyCollected",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "getOwner", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "getRandomNumber",
+    functionFragment: "getTicketInfo",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getTicketInfo",
+    functionFragment: "getTicketInfos",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -261,16 +304,37 @@ export interface FinalLotteryInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getWinningTicket",
+    functionFragment: "getWinningTicket1",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getWinningTicket2",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getWinningTicket3",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "getamount", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "hashOfANum", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "lotteryInfos",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "moneyCollectedForEachLottery",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "revealRndNumber",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "ticketCount",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "ticketNosInLotteryGetter",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "tickets", data: BytesLike): Result;
@@ -289,8 +353,8 @@ export interface FinalLotteryInterface extends utils.Interface {
 
   events: {
     "AmountOfPrize(string,uint256)": EventFragment;
-    "TicketInfo(uint256,uint256,bytes32,uint256,uint8,bool,uint8)": EventFragment;
-    "Winner(uint256,uint256)": EventFragment;
+    "TicketInfo(uint256,uint256,bytes32,uint8,bool,uint8)": EventFragment;
+    "Winner(bool)": EventFragment;
     "WinningTicket(uint256,uint256)": EventFragment;
   };
 
@@ -315,23 +379,21 @@ export interface TicketInfoEventObject {
   ticketNo: BigNumber;
   lotteryNo: BigNumber;
   ticketHash: string;
-  ticketTimestamp: BigNumber;
   status: number;
   active: boolean;
   ticketTier: number;
 }
 export type TicketInfoEvent = TypedEvent<
-  [BigNumber, BigNumber, string, BigNumber, number, boolean, number],
+  [BigNumber, BigNumber, string, number, boolean, number],
   TicketInfoEventObject
 >;
 
 export type TicketInfoEventFilter = TypedEventFilter<TicketInfoEvent>;
 
 export interface WinnerEventObject {
-  ticket_no: BigNumber;
-  prize: BigNumber;
+  isWin: boolean;
 }
-export type WinnerEvent = TypedEvent<[BigNumber, BigNumber], WinnerEventObject>;
+export type WinnerEvent = TypedEvent<[boolean], WinnerEventObject>;
 
 export type WinnerEventFilter = TypedEventFilter<WinnerEvent>;
 
@@ -384,7 +446,8 @@ export interface FinalLottery extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    calculateTotalPriceValue(
+    calculateSinglePriceValue(
+      thPrice: PromiseOrValue<BigNumberish>,
       lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
@@ -420,8 +483,8 @@ export interface FinalLottery extends BaseContract {
     getIthOwnedTicketNo(
       i: PromiseOrValue<BigNumberish>,
       lottery_no: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber, number] & { status: number }>;
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
 
     getIthWinningTicket(
       i: PromiseOrValue<BigNumberish>,
@@ -443,12 +506,20 @@ export interface FinalLottery extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { amount: BigNumber }>;
 
-    getRandomNumber(overrides?: CallOverrides): Promise<[BigNumber]>;
+    getOwner(
+      ticket_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[string]>;
 
     getTicketInfo(
       ticket_number: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
+
+    getTicketInfos(
+      ticket_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[string, BigNumber, BigNumber, string, number, boolean, number]>;
 
     getTicketPrize(
       lottery_no: PromiseOrValue<BigNumberish>,
@@ -461,15 +532,30 @@ export interface FinalLottery extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { amount: BigNumber }>;
 
-    getWinningTicket(
+    getWinningTicket1(
       lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
-    ): Promise<[BigNumber, BigNumber, BigNumber]>;
+    ): Promise<[BigNumber]>;
+
+    getWinningTicket2(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
+    getWinningTicket3(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
 
     getamount(
       tier: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
+    hashOfANum(
+      num: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[string]>;
 
     lotteryInfos(
       arg0: PromiseOrValue<BigNumberish>,
@@ -486,17 +572,33 @@ export interface FinalLottery extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
+    revealRndNumber(
+      ticket_no: PromiseOrValue<BigNumberish>,
+      random_number: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    ticketCount(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
+    ticketNosInLotteryGetter(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber[]]>;
+
     tickets(
       arg0: PromiseOrValue<string>,
       arg1: PromiseOrValue<BigNumberish>,
       arg2: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, BigNumber, string, BigNumber, number, boolean, number] & {
+      [string, BigNumber, BigNumber, string, number, boolean, number] & {
+        owner: string;
         ticketNo: BigNumber;
         lotteryNo: BigNumber;
         ticketHash: string;
-        ticketTimestamp: BigNumber;
         status: number;
         active: boolean;
         ticketTier: number;
@@ -531,7 +633,8 @@ export interface FinalLottery extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  calculateTotalPriceValue(
+  calculateSinglePriceValue(
+    thPrice: PromiseOrValue<BigNumberish>,
     lottery_no: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
@@ -567,8 +670,8 @@ export interface FinalLottery extends BaseContract {
   getIthOwnedTicketNo(
     i: PromiseOrValue<BigNumberish>,
     lottery_no: PromiseOrValue<BigNumberish>,
-    overrides?: CallOverrides
-  ): Promise<[BigNumber, number] & { status: number }>;
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
 
   getIthWinningTicket(
     i: PromiseOrValue<BigNumberish>,
@@ -588,12 +691,20 @@ export interface FinalLottery extends BaseContract {
 
   getMoneyCollected(overrides?: CallOverrides): Promise<BigNumber>;
 
-  getRandomNumber(overrides?: CallOverrides): Promise<BigNumber>;
+  getOwner(
+    ticket_no: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<string>;
 
   getTicketInfo(
     ticket_number: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
+
+  getTicketInfos(
+    ticket_no: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<[string, BigNumber, BigNumber, string, number, boolean, number]>;
 
   getTicketPrize(
     lottery_no: PromiseOrValue<BigNumberish>,
@@ -606,15 +717,30 @@ export interface FinalLottery extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
-  getWinningTicket(
+  getWinningTicket1(
     lottery_no: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
-  ): Promise<[BigNumber, BigNumber, BigNumber]>;
+  ): Promise<BigNumber>;
+
+  getWinningTicket2(
+    lottery_no: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  getWinningTicket3(
+    lottery_no: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
   getamount(
     tier: PromiseOrValue<BigNumberish>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  hashOfANum(
+    num: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<string>;
 
   lotteryInfos(
     arg0: PromiseOrValue<BigNumberish>,
@@ -628,17 +754,33 @@ export interface FinalLottery extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
+  revealRndNumber(
+    ticket_no: PromiseOrValue<BigNumberish>,
+    random_number: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  ticketCount(
+    lottery_no: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  ticketNosInLotteryGetter(
+    lottery_no: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<BigNumber[]>;
+
   tickets(
     arg0: PromiseOrValue<string>,
     arg1: PromiseOrValue<BigNumberish>,
     arg2: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
   ): Promise<
-    [BigNumber, BigNumber, string, BigNumber, number, boolean, number] & {
+    [string, BigNumber, BigNumber, string, number, boolean, number] & {
+      owner: string;
       ticketNo: BigNumber;
       lotteryNo: BigNumber;
       ticketHash: string;
-      ticketTimestamp: BigNumber;
       status: number;
       active: boolean;
       ticketTier: number;
@@ -673,7 +815,8 @@ export interface FinalLottery extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    calculateTotalPriceValue(
+    calculateSinglePriceValue(
+      thPrice: PromiseOrValue<BigNumberish>,
       lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -730,12 +873,20 @@ export interface FinalLottery extends BaseContract {
 
     getMoneyCollected(overrides?: CallOverrides): Promise<BigNumber>;
 
-    getRandomNumber(overrides?: CallOverrides): Promise<BigNumber>;
+    getOwner(
+      ticket_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<string>;
 
     getTicketInfo(
       ticket_number: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    getTicketInfos(
+      ticket_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[string, BigNumber, BigNumber, string, number, boolean, number]>;
 
     getTicketPrize(
       lottery_no: PromiseOrValue<BigNumberish>,
@@ -748,15 +899,30 @@ export interface FinalLottery extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    getWinningTicket(
+    getWinningTicket1(
       lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
-    ): Promise<[BigNumber, BigNumber, BigNumber]>;
+    ): Promise<BigNumber>;
+
+    getWinningTicket2(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    getWinningTicket3(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     getamount(
       tier: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    hashOfANum(
+      num: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<string>;
 
     lotteryInfos(
       arg0: PromiseOrValue<BigNumberish>,
@@ -773,17 +939,33 @@ export interface FinalLottery extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    revealRndNumber(
+      ticket_no: PromiseOrValue<BigNumberish>,
+      random_number: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    ticketCount(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    ticketNosInLotteryGetter(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber[]>;
+
     tickets(
       arg0: PromiseOrValue<string>,
       arg1: PromiseOrValue<BigNumberish>,
       arg2: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, BigNumber, string, BigNumber, number, boolean, number] & {
+      [string, BigNumber, BigNumber, string, number, boolean, number] & {
+        owner: string;
         ticketNo: BigNumber;
         lotteryNo: BigNumber;
         ticketHash: string;
-        ticketTimestamp: BigNumber;
         status: number;
         active: boolean;
         ticketTier: number;
@@ -814,11 +996,10 @@ export interface FinalLottery extends BaseContract {
     ): AmountOfPrizeEventFilter;
     AmountOfPrize(prizeName?: null, prize?: null): AmountOfPrizeEventFilter;
 
-    "TicketInfo(uint256,uint256,bytes32,uint256,uint8,bool,uint8)"(
+    "TicketInfo(uint256,uint256,bytes32,uint8,bool,uint8)"(
       ticketNo?: null,
       lotteryNo?: null,
       ticketHash?: null,
-      ticketTimestamp?: null,
       status?: null,
       active?: null,
       ticketTier?: null
@@ -827,17 +1008,13 @@ export interface FinalLottery extends BaseContract {
       ticketNo?: null,
       lotteryNo?: null,
       ticketHash?: null,
-      ticketTimestamp?: null,
       status?: null,
       active?: null,
       ticketTier?: null
     ): TicketInfoEventFilter;
 
-    "Winner(uint256,uint256)"(
-      ticket_no?: null,
-      prize?: null
-    ): WinnerEventFilter;
-    Winner(ticket_no?: null, prize?: null): WinnerEventFilter;
+    "Winner(bool)"(isWin?: null): WinnerEventFilter;
+    Winner(isWin?: null): WinnerEventFilter;
 
     "WinningTicket(uint256,uint256)"(
       ticketNo?: null,
@@ -858,7 +1035,8 @@ export interface FinalLottery extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    calculateTotalPriceValue(
+    calculateSinglePriceValue(
+      thPrice: PromiseOrValue<BigNumberish>,
       lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
@@ -894,7 +1072,7 @@ export interface FinalLottery extends BaseContract {
     getIthOwnedTicketNo(
       i: PromiseOrValue<BigNumberish>,
       lottery_no: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     getIthWinningTicket(
@@ -915,11 +1093,19 @@ export interface FinalLottery extends BaseContract {
 
     getMoneyCollected(overrides?: CallOverrides): Promise<BigNumber>;
 
-    getRandomNumber(overrides?: CallOverrides): Promise<BigNumber>;
+    getOwner(
+      ticket_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     getTicketInfo(
       ticket_number: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    getTicketInfos(
+      ticket_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     getTicketPrize(
@@ -933,14 +1119,29 @@ export interface FinalLottery extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    getWinningTicket(
+    getWinningTicket1(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    getWinningTicket2(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    getWinningTicket3(
       lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     getamount(
       tier: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    hashOfANum(
+      num: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     lotteryInfos(
@@ -950,6 +1151,22 @@ export interface FinalLottery extends BaseContract {
 
     moneyCollectedForEachLottery(
       arg0: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    revealRndNumber(
+      ticket_no: PromiseOrValue<BigNumberish>,
+      random_number: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    ticketCount(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    ticketNosInLotteryGetter(
+      lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -989,7 +1206,8 @@ export interface FinalLottery extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    calculateTotalPriceValue(
+    calculateSinglePriceValue(
+      thPrice: PromiseOrValue<BigNumberish>,
       lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
@@ -1025,7 +1243,7 @@ export interface FinalLottery extends BaseContract {
     getIthOwnedTicketNo(
       i: PromiseOrValue<BigNumberish>,
       lottery_no: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     getIthWinningTicket(
@@ -1046,11 +1264,19 @@ export interface FinalLottery extends BaseContract {
 
     getMoneyCollected(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    getRandomNumber(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+    getOwner(
+      ticket_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
     getTicketInfo(
       ticket_number: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    getTicketInfos(
+      ticket_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     getTicketPrize(
@@ -1064,14 +1290,29 @@ export interface FinalLottery extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    getWinningTicket(
+    getWinningTicket1(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    getWinningTicket2(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    getWinningTicket3(
       lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     getamount(
       tier: PromiseOrValue<BigNumberish>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    hashOfANum(
+      num: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     lotteryInfos(
@@ -1081,6 +1322,22 @@ export interface FinalLottery extends BaseContract {
 
     moneyCollectedForEachLottery(
       arg0: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    revealRndNumber(
+      ticket_no: PromiseOrValue<BigNumberish>,
+      random_number: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    ticketCount(
+      lottery_no: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    ticketNosInLotteryGetter(
+      lottery_no: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
