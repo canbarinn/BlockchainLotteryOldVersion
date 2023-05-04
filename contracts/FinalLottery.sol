@@ -80,6 +80,7 @@ contract FinalLottery {
         return lotteryNo;
     }
 
+    /// @notice add money on users account balance
     function depositEther() public payable {
         // amountu cikar
         balance[msg.sender] += msg.value;
@@ -88,6 +89,9 @@ contract FinalLottery {
         // console.log(balance[msg.sender]);
     }
 
+    /// @notice transfers the left-over money from a certain lottery to the following lottery after the prize amount has been substracted
+    /// @param lottery_no actual lottery number
+    /// @param  prize prize which will be add to amount of winnable money in that lottery
     function transferAmount(uint lottery_no, uint prize) public {
         totalPrizeMoney[lottery_no] += prize;
         require(
@@ -98,12 +102,17 @@ contract FinalLottery {
         moneyCollectedForEachLottery[lottery_no + 1] += transferAmnt;
     }
 
+    /// @notice substracts the amount of given ether and sends it back und the user
+    /// @param amount of ether to be withdrawn
     function withdrawEther(uint amount) public payable {
         require(balance[msg.sender] >= amount, "insufficient balance");
         balance[msg.sender] -= amount;
         payable(msg.sender).transfer(amount);
     }
 
+    /// @notice function by which user can buy ticket by his choice, checks tier first and creates a Ticket 
+    /// @param hash_rnd_number random hash number which is given by the user to buy the ticket
+    /// @param tier chosen type of ticket, can be 2 , 4 , 8
     function buyTicket(bytes32 hash_rnd_number, int tier) public {
         ticketNoCounter += 1;
         uint lottery_no = lotteryNoCalculator();
@@ -169,6 +178,9 @@ contract FinalLottery {
         moneyCollectedForEachLottery[lottery_no] += getamount(ticketTier);
     }
 
+    /// @notice revealing the number that user provided us at reveal stage
+    /// @param ticket_no users ticket number
+    /// @param random_number number he used to buy the ticket
     function revealRndNumber(uint ticket_no, uint random_number) public {
         // require(lotteryNoCounter > 1, "early");
         require(
@@ -198,6 +210,9 @@ contract FinalLottery {
         }
     }
 
+    /// @notice helper function to calculate the buy-price of a ticket given by its tier
+    /// @param tier type of ticket (Full, Half, Quarter)
+    /// @return amount buy-value of the ticket
     function getamount(TicketTier tier) public pure returns (uint) {
         uint amount;
         if (tier == TicketTier.Full) {
@@ -212,6 +227,8 @@ contract FinalLottery {
         return amount;
     }
 
+    /// @notice function which enables users to get a ticket refund. Sends back amount to his account and decreases balance of lottery
+    /// @param ticket_no number of ticket user wants to withdraw
     function collectTicketRefund(uint ticket_no) public {
         require(
             ticket_no <= ticketNoCounter,
@@ -237,6 +254,11 @@ contract FinalLottery {
         ticketsFromOutside[ticket_no].active = false;
     }
 
+    /// @notice function which gives user the number of the ticket by a given index and lottery number
+    /// @param i th ticket user wants to get
+    /// @param lottery_no number of lottery user is referring to
+    /// @return ticketNo number of the wanted ticket
+    /// @return status status, if the ticket is revealed or not
     function getIthOwnedTicketNo( 
         uint i,
         uint lottery_no
@@ -259,6 +281,10 @@ contract FinalLottery {
         return (ticketNum, status);
     }
 
+    /// @notice gives back the last bought ticket`s ticket number and it`s status
+    /// @param lottery_no number of lottery user is referring to
+    /// @return uint number of the wanted ticket
+    /// @return uint8 status, if the ticket is revealed or not
     function getLastOwnedTicketNo(
         uint lottery_no
     ) public view returns (uint, uint8) {
@@ -291,6 +317,8 @@ contract FinalLottery {
         // ); // DELETABLE
     }
 
+    /// @notice helper function to get properties of a ticket by it`s ticket number
+    /// @param ticket_number ticket number user is referring to
     function getTicketInfo(uint ticket_number) public {
         (uint lottery_no, uint index) = findTicketInfosFromNo(ticket_number);
 
@@ -312,6 +340,8 @@ contract FinalLottery {
         );
     }
 
+    /// @notice helper function to get a ranrom number 
+    /// @return uint 
     function getRandomNumber() internal view returns (uint) {
         return uint(keccak256(abi.encodePacked(block.timestamp)));
     }
@@ -360,6 +390,9 @@ contract FinalLottery {
     //     totalPrizeMoney[lottery_no] = calculateTotalPriceValue(lottery_no);
     // }
 
+    /// @notice picks three random winner tickets of a lottery by the given lottery number. Those winner tickets can be then found 
+    ///         in WinningTickets Array in which we save the ticket number of the three winners ticket
+    /// @param lottery_no number of lottery we are referring to
     function pickWinner(uint lottery_no) private {
         if (lotteryInfos[lottery_no].ticketNosInLottery.length < 3) {
             revert(
@@ -391,9 +424,11 @@ contract FinalLottery {
         // totalPrizeMoney[lottery_no] += calculateTotalPriceValue(lottery_no);
     }
 
-    /**
-    This Function calculates the value of a specific winning tickets, used in calculateTotalPriceValue() and checkIfTiketWon
-     */
+    /// @notice calculates the won price of the th-winning ticket. We determine which winning ticket is referred to and then compute the won prize 
+    /// on the amount of ether existing in the givin lottery number.
+    /// @param thPrice the th-price which`s value we want to calculate
+    /// @param lottery_no number of lottery we are referring to
+    /// @return uint amount won by the ticket
     function calculateSinglePriceValue(
         uint thPrice,
         uint lottery_no
@@ -479,10 +514,9 @@ contract FinalLottery {
         return (prize);
     }
 
-    /**
-    this function calculates the total value of the winners tickets in a specifiv lottery, has to be substracted from the total lottery balance when
-     */
-    //needs more requirements, for example if the winners tickets have been determined
+    /// @notice this function calculates the total value of the winners tickets in a specifiv lottery
+    /// @param lottery_no number of lottery we are referring to
+    /// @return uint amount won by the ticket
     function calculateTotalPriceValue(uint lottery_no) private returns (uint) {
         uint firstprice = calculateSinglePriceValue(1, lottery_no);
         uint secondprice = calculateSinglePriceValue(2, lottery_no);
@@ -491,6 +525,12 @@ contract FinalLottery {
         return totalpricevalue;
     }
 
+    /// @notice this function finds the i-th winning ticket in a given lottery. By using findTicketInfosFromNo function
+    /// information about the ticket can be easily found
+    /// @param i i-th ticket index
+    /// @param lottery_no number of lottery we are referring to
+    /// @return ticket_no number of the i-th won ticket 
+    /// @return amount amount of money won by the ticket
     function getIthWinningTicket(
         uint i,
         uint lottery_no
@@ -520,6 +560,11 @@ contract FinalLottery {
         return (ticket_no, amount);
     }
 
+    /// @notice checks if a ticket given by it`s ticket number and the lottery number is a winning ticket. Since we safe the winning ticket in a specific 
+    ///         array (winningTickets[]), we can easily compare the ticket numbers
+    /// @param lottery_no number of lottery we are referring to
+    /// @param ticket_no number of ticket we are referring to
+    /// @return prize amount of money won by the ticket if it is a winning ticket, zero if not
     function checkIfTicketWon(
         uint lottery_no,
         uint ticket_no
@@ -598,6 +643,12 @@ contract FinalLottery {
         }
     } // DELETABLE
 
+
+
+    /// @notice collects the price of a winning ticket, adds it to the senders balance then
+    /// @param lottery_no number of lottery we are referring to
+    /// @param ticket_no number of ticket we are referring to
+    /// @return uint amount of money won by the ticket 
     function collectTicketPrize(
         uint lottery_no,
         uint ticket_no
@@ -647,22 +698,30 @@ contract FinalLottery {
 
     //BELOW ARE GETTERS, SHOULD BE REMOVED TO OTHER CONTRACTS
 
+    ///@notice getter function for the total lottery balance
+    ///@return amount of money in the lottery
     function getMoneyCollected() public view returns (uint amount) {
         return lotteryBalance;
     }
 
+    ///@notice getter function for the value of all three prizes inside a lottery given by it`s lottery number
+    ///@return amount of prize money in the lottery with lottery number No
     function getTotalPrizeMoney(
         uint lottery_no
     ) public view returns (uint amount) {
         return totalPrizeMoney[lottery_no];
     }
 
+     ///@notice getter function for the total lottery inside a certain lottery given by it`s lottery number
+    ///@return amount of money in the lottery with given lottery number No
     function getLotteryMoneyCollected(
         uint lottery_no
     ) public view returns (uint) {
         return moneyCollectedForEachLottery[lottery_no];
     }
 
+    ///@notice getter function to receive the ticket number of the first winning ticket inside a certain lottery
+    ///@return uint ticket number of the first winning ticket
     function getWinningTicket1(uint lottery_no) public view returns (uint) {
         return (
             lotteryInfos[lottery_no].ticketNosInLottery[
@@ -671,6 +730,8 @@ contract FinalLottery {
         );
     }
 
+    ///@notice getter function to receive the ticket number of the second winning ticket inside a certain lottery
+    ///@return uint ticket number of the second winning ticket
     function getWinningTicket2(uint lottery_no) public view returns (uint) {
         return (
             lotteryInfos[lottery_no].ticketNosInLottery[
@@ -679,6 +740,8 @@ contract FinalLottery {
         );
     }
 
+    ///@notice getter function to receive the ticket number of the third winning ticket inside a certain lottery
+    ///@return uint ticket number of the third winning ticket
     function getWinningTicket3(uint lottery_no) public view returns (uint) {
         return (
             lotteryInfos[lottery_no].ticketNosInLottery[
@@ -687,10 +750,17 @@ contract FinalLottery {
         );
     }
 
+    ///@notice getter function for the balance of a sender
+    ///@return uint sender`s balance
     function getBalance() public view returns (uint) {
         return balance[msg.sender];
     }
 
+
+    ///@notice returns the prize of a ticket given by the lottery number and the winning ticket number. Has to check if given ticket matches with the existing winning tickets
+    ///@param lottery_no  number of lottery we are referring to
+    ///@param ticket_no  number of ticket we are referring to
+    ///@return uint prize of the ticket
     function getTicketPrize(
         uint lottery_no,
         uint ticket_no
@@ -722,10 +792,14 @@ contract FinalLottery {
         return prize;
     }
 
+    ///@notice helper function to count the tickets inside a given lottery
+    ///@param lottery_no number of lottery we are referring to
     function ticketCount(uint lottery_no) public view returns (uint) {
         return lotteryInfos[lottery_no].ticketNosInLottery.length;
     }
 
+    ///@notice helper function to receive all the attributes of a ticket
+    ///@param ticket_no number of ticket we are referring to
     function getTicketInfos(
         uint ticket_no
     )
@@ -744,10 +818,14 @@ contract FinalLottery {
         );
     }
 
+    ///@notice helper function to find the owner of a ticket by sending back the owner`s address
+    ///@param ticket_no number of ticket we are referring to
     function getOwner(uint ticket_no) public view returns (address) {
         return ticketsFromOutside[ticket_no].owner;
     }
 
+    ///@notice helper function to get all the ticket numbers (safed in an array) existing in the given lottery number
+    ///@param lottery_no number of lottery we are referring to
     function ticketNosInLotteryGetter(
         uint lottery_no
     ) public view returns (uint[] memory) {
