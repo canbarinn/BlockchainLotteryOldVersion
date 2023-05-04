@@ -111,19 +111,19 @@ contract FinalLottery {
 
         if (tier == 3) {
             require(
-                balance[msg.sender] > 2 * 10 ** 10,
+                balance[msg.sender] > 2 * 10 ,
                 "insufficient balance for quarter ticket"
             );
             ticketTier = TicketTier.Quarter;
         } else if (tier == 2) {
             require(
-                balance[msg.sender] > 4 * 10 ** 10,
+                balance[msg.sender] > 4 * 10 ,
                 "insufficient balance for half ticket"
             );
             ticketTier = TicketTier.Half;
         } else if (tier == 1) {
             require(
-                balance[msg.sender] > 8 * 10 ** 10,
+                balance[msg.sender] > 8 * 10 ,
                 "insufficient balance for full ticket"
             );
             ticketTier = TicketTier.Full;
@@ -225,9 +225,7 @@ contract FinalLottery {
             ticketsFromOutside[ticket_no].lotteryNo == (lotteryNoCalculator()),
             "You cannot refund anymore"
         );
-        uint lottery_no;
-        uint ticket_index;
-        (lottery_no, ticket_index) = findTicketInfosFromNo(ticket_no);
+        uint lottery_no = ticketsFromOutside[ticket_no].lotteryNo;
         TicketTier tier = ticketsFromOutside[ticket_no].ticketTier;
         uint amount = getamount(tier);
         balance[msg.sender] += amount;
@@ -240,10 +238,10 @@ contract FinalLottery {
     function getIthOwnedTicketNo( 
         uint i,
         uint lottery_no
-    ) public returns (uint, uint8) {
+    ) public view returns (uint, uint8) {
         require(
             lottery_no <= (lotteryNoCalculator()),
-            "Lottery you are requesting has not started yet"
+            "Lottery has not started yet"
         );
         require(
             ticketNosArray[msg.sender].length >= i,
@@ -367,11 +365,6 @@ contract FinalLottery {
             );
             // TODO: make the tickets refundable here
         }
-        if (lotteryInfos[lottery_no].winningTickets.length == 3) {
-            revert("Winners are already selected.");
-            // TODO: make the tickets refundable here
-        }
-        require(lottery_no <= lotteryNoCalculator(), "Invalid lottery number!");
 
         uint numberofTickets = lotteryInfos[lottery_no]
             .ticketNosInLottery
@@ -429,9 +422,7 @@ contract FinalLottery {
             ) {
                 //prize = moneyCollectedForEachLottery[lottery_no] / 8;
                 prize = moneyCollectedForEachLottery[lottery_no] / 8;
-            } else {
-                revert("Invalid operation.");
-            }
+            } 
         } else if (thPrice == 2) {
             if (
                 ticketsFromOutside[winnerTicketNo].ticketTier == TicketTier.Full
@@ -449,9 +440,7 @@ contract FinalLottery {
             ) {
                 //prize = moneyCollectedForEachLottery[lottery_no] / 16;
                 prize = moneyCollectedForEachLottery[lottery_no] / 16;
-            } else {
-                revert("Invalid operation.");
-            }
+            } 
         } else if (thPrice == 3) {
             if (
                 ticketsFromOutside[winnerTicketNo].ticketTier == TicketTier.Full
@@ -469,9 +458,7 @@ contract FinalLottery {
             ) {
                 //prize = moneyCollectedForEachLottery[lottery_no] / 32;
                 prize = moneyCollectedForEachLottery[lottery_no] / 32;
-            } else {
-                revert("Invalid operation.");
-            }
+            } 
         } else {
             prize = 0;
         }
@@ -499,10 +486,12 @@ contract FinalLottery {
             lottery_no <= (lotteryNoCalculator()),
             "Lottery you are requesting has not started yet!"
         );
-        require(
-            lotteryInfos[lottery_no].winningTickets.length == 3,
-            "There is no winning ticket selected yet!"
-        );
+
+        if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
+            pickWinner(lottery_no);
+            totalPrizeMoney[lottery_no] = calculateTotalPriceValue(lottery_no);
+            transferAmount(lottery_no, totalPrizeMoney[lottery_no]);
+        }
         require(
             i == 1 || i == 2 || i == 3,
             "Invalid number of winning ticket!"
@@ -529,6 +518,11 @@ contract FinalLottery {
             lottery_no <= (lotteryNoCalculator()),
             "Lottery you are requesting has not started yet!"
         );
+            if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
+            pickWinner(lottery_no);
+            totalPrizeMoney[lottery_no] = calculateTotalPriceValue(lottery_no);
+            transferAmount(lottery_no, totalPrizeMoney[lottery_no]);
+        }
         require(
             ticket_no <= ticketNoCounter,
             "The ticket you are requesting does not exist"
@@ -543,11 +537,7 @@ contract FinalLottery {
         );
 
         //picks winners tickets if they haven`t been chosen before
-        if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
-            pickWinner(lottery_no);
-            totalPrizeMoney[lottery_no] = calculateTotalPriceValue(lottery_no);
-            transferAmount(lottery_no, totalPrizeMoney[lottery_no]);
-        }
+
         uint prize;
         bool boolean;
         string memory prizeName;
@@ -610,7 +600,7 @@ contract FinalLottery {
             ticket_no <= ticketNoCounter,
             "The ticket you are requesting does not exist"
         );
-        require(ticketsFromOutside[ticket_no].status == 1, "not revealed");
+        require(ticketsFromOutside[ticket_no].status == 1, "Ticket is not revealed");
         require(
             ticketsFromOutside[ticket_no].owner == msg.sender,
             "You are not the owner!"
