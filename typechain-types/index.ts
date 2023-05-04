@@ -3,10 +3,14 @@
 /* eslint-disable */
 import type * as lotteryv2Sol from "./Lotteryv2.sol";
 export type { lotteryv2Sol };
+import type * as interfaces from "./interfaces";
+export type { interfaces };
 export type { FinalLottery } from "./FinalLottery";
 export type { Lock } from "./Lock";
 export * as factories from "./factories";
 export { FinalLottery__factory } from "./factories/FinalLottery__factory";
+export type { IFinalLottery } from "./interfaces/IFinalLottery";
+export { IFinalLottery__factory } from "./factories/interfaces/IFinalLottery__factory";
 export { Lock__factory } from "./factories/Lock__factory";
 export type { DALottery } from "./Lotteryv2.sol/DALottery";
 export { DALottery__factory } from "./factories/Lotteryv2.sol/DALottery__factory";

@@ -420,8 +420,8 @@
       ]
     },
     "/Users/canbarin/Documents/GitHub/BlockchainLotteryOldVersion/contracts/FinalLottery.sol": {
-      "lastModificationDate": 1683054532876,
-      "contentHash": "e080809cb2b18ddc222e72bad7f3b781",
+      "lastModificationDate": 1683071001344,
+      "contentHash": "2835c992f8da674b70440d37ef028fac",
       "sourceName": "contracts/FinalLottery.sol",
       "solcConfig": {
         "version": "0.8.18",
@@ -550,6 +550,41 @@
       "imports": [],
       "versionPragmas": [],
       "artifacts": []
+    },
+    "/Users/canbarin/Documents/GitHub/BlockchainLotteryOldVersion/contracts/interfaces/IFinalLottery.sol": {
+      "lastModificationDate": 1683070234174,
+      "contentHash": "3989c5eb135bba9a8064888175af92b4",
+      "sourceName": "contracts/interfaces/IFinalLottery.sol",
+      "solcConfig": {
+        "version": "0.8.18",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IFinalLottery"
+      ]
     }
   }
 }

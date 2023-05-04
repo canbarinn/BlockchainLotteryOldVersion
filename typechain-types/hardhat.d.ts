@@ -17,6 +17,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.FinalLottery__factory>;
     getContractFactory(
+      name: "IFinalLottery",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IFinalLottery__factory>;
+    getContractFactory(
       name: "Lock",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Lock__factory>;
@@ -30,6 +34,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.FinalLottery>;
+    getContractAt(
+      name: "IFinalLottery",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IFinalLottery>;
     getContractAt(
       name: "Lock",
       address: string,

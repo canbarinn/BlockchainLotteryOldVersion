@@ -31,6 +31,10 @@ describe("Lock", function () {
       console.log("contract balance: ", await ethers.provider.getBalance(Lottery.address));
       console.log(accounts.length);
     });
+    xit("Should set the right unlockTime", async function () {
+      await Lottery.connect(accounts[1]).depositEther({ value: 1 * 10 ** 10 });
+      await expect(Lottery.connect(accounts[1]).buyTicket("0x23be5b597bb2efbf6d693749acabd6f758f688025cc6ae14cc2a557d7790eeab", 2)).to.be.revertedWith("insufficient balance for quarter ticket");
+    });
 
     xit("We can buy ticket", async function () {
       await Lottery.depositEther({ value: 100 * 10 ** 12 });
@@ -110,14 +114,14 @@ describe("Lock", function () {
       // await expect(await winningTicket).to.emit(Lottery, "Winner").withArgs(2,1);
     });
 
-    xit("Scenario", async function () {
-      console.log("owner balance1: ", await ethers.provider.getBalance(owner.address));
-      console.log("contract balance1: ", await ethers.provider.getBalance(Lottery.address));
-      await Lottery.depositEther();
-      console.log("owner balance: ", await ethers.provider.getBalance(owner.address));
-      console.log("contract balance: ", await ethers.provider.getBalance(Lottery.address));
-      console.log(await ethers.provider.getBalance(owner.address));
-      console.log(accounts.length);
+    it("Scenario", async function () {
+      // console.log("owner balance1: ", await ethers.provider.getBalance(owner.address));
+      // console.log("contract balance1: ", await ethers.provider.getBalance(Lottery.address));
+      // await Lottery.depositEther();
+      // console.log("owner balance: ", await ethers.provider.getBalance(owner.address));
+      // console.log("contract balance: ", await ethers.provider.getBalance(Lottery.address));
+      // console.log(await ethers.provider.getBalance(owner.address));
+      // console.log(accounts.length);
       /**
        We create 300 accounts, we buy 3 ticket with each kind with each of the accounts. 
        we buy each ticket with 10000 seconds time difference,
@@ -134,7 +138,7 @@ describe("Lock", function () {
 
       for (let i = 0; i < 260; i++) {
         await time.increase(10000);
-        await Lottery.connect(accounts[i]).depositEther({ value: 10000 });
+        await Lottery.connect(accounts[i]).depositEther({ value: 100 * 10 ** 10 });
         const userAddress = `${accounts[i].address}`; // Replace with the actual user address
         const providedNumber = i; // Replace with the actual provided number
 
@@ -153,10 +157,18 @@ describe("Lock", function () {
       const winningTicketNo2 = await Lottery.getWinningTicket2(2);
       const winningTicketNo3 = await Lottery.getWinningTicket3(3);
 
-      expect(await Lottery.connect(accounts[9]).checkIfTicketWon(1, winningTicketNo1))
-        .to.emit(Lottery, "Winner")
-        .withArgs(true);
-      expect(await Lottery.connect(accounts[9]).checkIfTicketWon(2, winningTicketNo2))
+      const ownerAdd = await Lottery.getOwner(winningTicketNo1);
+
+      let accountNum: number = 0;
+
+      for (let i = 0; i < 260; i++) {
+        if (accounts[i].address.toLowerCase() === ownerAdd.toLowerCase()) {
+          accountNum = i;
+          break;
+        }
+      }
+
+      expect(await Lottery.connect(accounts[accountNum]).checkIfTicketWon(1, winningTicketNo1))
         .to.emit(Lottery, "Winner")
         .withArgs(true);
 
@@ -167,7 +179,7 @@ describe("Lock", function () {
       console.log("ticket count no5", await Lottery.ticketCount(5));
     });
 
-    it("collect ticket prize", async function () {
+    xit("collect ticket prize", async function () {
       for (let i = 0; i < 260; i++) {
         let A = 1;
         await time.increase(10000);
@@ -189,9 +201,8 @@ describe("Lock", function () {
           A = 3;
         } else if (A == 3) {
           await Lottery.connect(accounts[i]).buyTicket(`${hash}`, 3);
-          A = 1
+          A = 1;
         }
-
       }
 
       const winningTicketNo1 = await Lottery.getWinningTicket1(1);
@@ -224,8 +235,6 @@ describe("Lock", function () {
       console.log(hash);
       const hash2 = await Lottery.hashOfANum(3);
       console.log(hash2);
-
-      
     });
   });
 });

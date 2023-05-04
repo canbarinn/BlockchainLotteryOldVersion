@@ -2,5 +2,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as lotteryv2Sol from "./Lotteryv2.sol";
+export * as interfaces from "./interfaces";
 export { FinalLottery__factory } from "./FinalLottery__factory";
 export { Lock__factory } from "./Lock__factory";
