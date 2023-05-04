@@ -130,8 +130,8 @@ describe("Lock", function () {
     });
     it("collectTicketPrize reverts", async function () {
       // COMPLETED
-      const existingIthWinningTicket = 1;
-      const nonExistingIthWinningTicket = 5;
+      const existingTicket = 1;
+      const nonExistingTicket = 150;
       const existingLotteryNumber = 1;
       const nonExistingLotteryNumber = 6;
       await Lottery.connect(accounts[1]).depositEther({ value: 10 * 10 ** 10 });
@@ -140,15 +140,16 @@ describe("Lock", function () {
       await Lottery.connect(accounts[1]).buyTicket("0x1364421c30895d0949d8f03614ad49766d67b19169eea8ec69551b7559a1539c", 2);
       await Lottery.connect(accounts[1]).buyTicket("0x1364421c30895d0949d8f03614ad49766d67b19169eea8ec69551b7559a1539c", 2);
       await Lottery.connect(accounts[1]).buyTicket("0x1364421c30895d0949d8f03614ad49766d67b19169eea8ec69551b7559a1539c", 2);
+      await Lottery.connect(accounts[1]).buyTicket("0x1364421c30895d0949d8f03614ad49766d67b19169eea8ec69551b7559a1539c", 2);
 
       await time.increase(WEEK_IN_SECS + 1000);
+      await Lottery.connect(accounts[1]).revealRndNumber(1, 3)
       await time.increase(WEEK_IN_SECS + 1000);
-
-      await expect(Lottery.connect(accounts[1]).getIthWinningTicket(existingIthWinningTicket, nonExistingLotteryNumber)).to.be.revertedWith("Lottery you are requesting has not started yet!");
-      await expect(Lottery.connect(accounts[1]).getIthWinningTicket(nonExistingIthWinningTicket, existingLotteryNumber)).to.be.revertedWith("Invalid number of winning ticket!");
-   
-
-    });
+      await expect(Lottery.connect(accounts[1]).collectTicketPrize(existingLotteryNumber,nonExistingTicket)).to.be.revertedWith("The ticket you are requesting does not exist");
+      await expect(Lottery.connect(accounts[1]).collectTicketPrize(existingLotteryNumber,2)).to.be.revertedWith("Ticket is not revealed");
+      await expect(Lottery.connect(accounts[1]).collectTicketPrize(nonExistingLotteryNumber,existingTicket)).to.be.revertedWith("Lottery you are requesting has not started yet!");
+      await expect(Lottery.connect(accounts[2]).collectTicketPrize(existingLotteryNumber,existingTicket)).to.be.revertedWith("You are not the owner!");
+   });
 
     xit("Should set the right unlockTime", async function () {
       const number = 3;

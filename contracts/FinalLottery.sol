@@ -605,16 +605,13 @@ contract FinalLottery {
             ticketsFromOutside[ticket_no].owner == msg.sender,
             "You are not the owner!"
         );
-        require(
-            lotteryInfos[lottery_no].winningTickets.length == 3,
-            "Winners ticket have not been selected yet"
-        );
-
         if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
             pickWinner(lottery_no);
             totalPrizeMoney[lottery_no] = calculateTotalPriceValue(lottery_no);
             transferAmount(lottery_no, totalPrizeMoney[lottery_no]);
         }
+
+
         uint prizeIndex;
         for (uint i = 0; i < 3; i++) {
             if (
