@@ -17,13 +17,13 @@ contract FinalLottery {
         Invalid
     }
 
-    mapping(address => mapping(uint => Ticket[])) public tickets; //address => lotteryNo => Ticket
+    mapping(address => uint[]) public ticketNosArray; //address => Ticketno
+    // mapping(address => mapping(uint => Ticket[])) public tickets; //address => lotteryNo => Ticket // DELETABLE
     mapping(address => uint256) public balance;
     mapping(uint => LotteryInfo) public lotteryInfos; //lotteryNo => LotteryInfo
     mapping(uint => uint) public moneyCollectedForEachLottery;
     mapping(uint => uint) public totalPrizeMoney;
     mapping(uint => Ticket) ticketsFromOutside;
-
 
     struct Ticket {
         address owner;
@@ -42,6 +42,23 @@ contract FinalLottery {
         uint[] ticketNosInLottery; //
     }
 
+    function findLotteryNoFromTicketNo(uint ticket_no) public returns (uint) {
+        uint lastLotteryNo = lotteryNoCalculator();
+        uint searchLotteryNo;
+        for (uint i = 1; i < lastLotteryNo; i++) {
+            for (
+                uint j = 0;
+                j < lotteryInfos[i].ticketNosInLottery.length;
+                j++
+            ) {
+                if (ticket_no == lotteryInfos[i].ticketNosInLottery[j]) {
+                    searchLotteryNo = i;
+                }
+            }
+        }
+        return searchLotteryNo;
+    }
+
     event TicketInfo(
         uint ticketNo,
         uint lotteryNo,
@@ -56,7 +73,7 @@ contract FinalLottery {
     event Winner(bool isWin);
     event SinglePriceVal(uint totalPrice);
 
-    function lotteryNoCalculator() internal returns (uint) {
+    function lotteryNoCalculator() public view returns (uint) {
         uint currentTime = block.timestamp;
         uint timePassed = currentTime - lotteryDeploymentTime;
         uint lotteryNo = (timePassed / (60 * 60 * 24 * 7)) + 1;
@@ -73,7 +90,10 @@ contract FinalLottery {
 
     function transferAmount(uint lottery_no, uint prize) public {
         totalPrizeMoney[lottery_no] += prize;
-        require(moneyCollectedForEachLottery[lottery_no] >= prize, "Lottery is invalid, because there is not enough money in the Lottery for the prizes");
+        require(
+            moneyCollectedForEachLottery[lottery_no] >= prize,
+            "Lottery is invalid, because there is not enough money in the Lottery for the prizes"
+        );
         uint transferAmnt = moneyCollectedForEachLottery[lottery_no] - prize;
         moneyCollectedForEachLottery[lottery_no + 1] += transferAmnt;
     }
@@ -87,19 +107,25 @@ contract FinalLottery {
     function buyTicket(bytes32 hash_rnd_number, int tier) public {
         ticketNoCounter += 1;
         uint lottery_no = lotteryNoCalculator();
-         TicketTier ticketTier;
+        TicketTier ticketTier;
 
-        if(tier == 2){
-            require(balance[msg.sender] > 2 * 10 ** 10 , "insufficient balance for quarter ticket");
+        if (tier == 3) {
+            require(
+                balance[msg.sender] > 2 * 10 ** 10,
+                "insufficient balance for quarter ticket"
+            );
             ticketTier = TicketTier.Quarter;
-            
-        }
-        else if(tier == 4){
-            require(balance[msg.sender] > 4 * 10 ** 10 , "insufficient balance half ticket");
-             ticketTier = TicketTier.Half;
-        }
-        else if(tier == 8){
-            require(balance[msg.sender] > 8 * 10 ** 10 , "insufficient balance full ticket");
+        } else if (tier == 2) {
+            require(
+                balance[msg.sender] > 4 * 10 ** 10,
+                "insufficient balance for half ticket"
+            );
+            ticketTier = TicketTier.Half;
+        } else if (tier == 1) {
+            require(
+                balance[msg.sender] > 8 * 10 ** 10,
+                "insufficient balance for full ticket"
+            );
             ticketTier = TicketTier.Full;
         }
 
@@ -115,17 +141,17 @@ contract FinalLottery {
             }
         }
 
-        tickets[msg.sender][lottery_no].push(
-            Ticket(
-                msg.sender,
-                ticketNoCounter,
-                lottery_no,
-                hash_rnd_number,
-                0,
-                true,
-                ticketTier
-            )
-        );
+        // tickets[msg.sender][lottery_no].push(
+        //     Ticket(
+        //         msg.sender,
+        //         ticketNoCounter,
+        //         lottery_no,
+        //         hash_rnd_number,
+        //         0,
+        //         true,
+        //         ticketTier
+        //     )
+        // ); //DELETABLE
 
         ticketsFromOutside[ticketNoCounter].owner = msg.sender;
         ticketsFromOutside[ticketNoCounter].ticketNo = ticketNoCounter;
@@ -135,7 +161,8 @@ contract FinalLottery {
         ticketsFromOutside[ticketNoCounter].active = true;
         ticketsFromOutside[ticketNoCounter].ticketTier = ticketTier;
 
-//Todo this gives error
+        //Todo this gives error
+        ticketNosArray[msg.sender].push(ticketNoCounter);
         balance[msg.sender] -= getamount(ticketTier);
         lotteryBalance += getamount(ticketTier);
         lotteryInfos[lottery_no].ticketNosInLottery.push(ticketNoCounter);
@@ -144,87 +171,144 @@ contract FinalLottery {
 
     function revealRndNumber(uint ticket_no, uint random_number) public {
         // require(lotteryNoCounter > 1, "early");
-        require(ticket_no <= ticketNoCounter, "There is no ticket with this number in the system");
-        require(ticketsFromOutside[ticket_no].owner == msg.sender, "You are not the owner of this ticket");
-        require(ticketsFromOutside[ticket_no].lotteryNo == (lotteryNoCalculator() -1), "incorrect time to reveal" );
-        require(ticketsFromOutside[ticket_no].status == 0, "Sorry, you have already revealed" );
+        require(
+            ticket_no <= ticketNoCounter,
+            "There is no ticket with this number in the system"
+        );
+        require(
+            ticketsFromOutside[ticket_no].owner == msg.sender,
+            "You are not the owner of this ticket"
+        );
+        require(
+            ticketsFromOutside[ticket_no].lotteryNo ==
+                (lotteryNoCalculator() - 1),
+            "incorrect time to reveal"
+        );
+        require(
+            ticketsFromOutside[ticket_no].status == 0,
+            "Sorry, you have already revealed"
+        );
         bytes32 hash = keccak256(abi.encodePacked(msg.sender, random_number));
         (uint lottery_no, uint index) = findTicketInfosFromNo(ticket_no);
-        if(hash == ticketsFromOutside[ticket_no].ticketHash) {
-            ticketsFromOutside[ticket_no].status =1;
-            tickets[msg.sender][lottery_no][index].status = 1;
+        if (hash == ticketsFromOutside[ticket_no].ticketHash) {
+            ticketsFromOutside[ticket_no].status = 1;
+            // tickets[msg.sender][lottery_no][index].status = 1; // DELETABLE
+        } else {
+            revert("Incorrect number!");
         }
     }
 
     function getamount(TicketTier tier) public pure returns (uint) {
         uint amount;
         if (tier == TicketTier.Full) {
-            amount = 8 * (10 );
+            amount = 8 * (10);
         } else if (tier == TicketTier.Half) {
-            amount = 4 * (10 );
+            amount = 4 * (10);
         } else if (tier == TicketTier.Full) {
-            amount = 2 * (10 );
-        }
-        else {
+            amount = 2 * (10);
+        } else {
             amount = 0;
         }
         return amount;
     }
 
     function collectTicketRefund(uint ticket_no) public {
-        require(ticket_no <= ticketNoCounter, "There is no ticket with this number in the system");
-        require(ticketsFromOutside[ticket_no].owner == msg.sender, "You are not the owner of this ticket");
-        require(ticketsFromOutside[ticket_no].lotteryNo == (lotteryNoCalculator()), "You cannot refund anymore" );
-        require(ticketsFromOutside[ticket_no].status == 0, "You cannot refund anymore, ticket is already revealed" );
+        require(
+            ticket_no <= ticketNoCounter,
+            "There is no ticket with this number in the system"
+        );
+        require(
+            ticketsFromOutside[ticket_no].owner == msg.sender,
+            "You are not the owner of this ticket"
+        );
+        require(
+            ticketsFromOutside[ticket_no].lotteryNo == (lotteryNoCalculator()),
+            "You cannot refund anymore"
+        );
         uint lottery_no;
         uint ticket_index;
         (lottery_no, ticket_index) = findTicketInfosFromNo(ticket_no);
-        TicketTier tier = tickets[msg.sender][lottery_no][ticket_index]
-            .ticketTier;
+        TicketTier tier = ticketsFromOutside[ticket_no].ticketTier;
         uint amount = getamount(tier);
         balance[msg.sender] += amount;
         moneyCollectedForEachLottery[lottery_no] -= amount;
         lotteryBalance -= amount;
-        tickets[msg.sender][lottery_no][ticket_index].active = false;
+        // tickets[msg.sender][lottery_no][ticket_index].active = false; // DELETABLE
         ticketsFromOutside[ticket_no].active = false;
     }
 
-    function getIthOwnedTicketNo(
+    function getIthOwnedTicketNo( 
         uint i,
         uint lottery_no
-    ) public returns (uint, uint8 status) {
-        require(lottery_no <= (lotteryNoCalculator()), "Lottery you are requesting has not started yet" );
-        require(tickets[msg.sender][lottery_no].length >= i, "You don`t have that many tickets");
-        Ticket memory targetTicket;
-        targetTicket = tickets[msg.sender][lottery_no][i];
-        uint ticketNo = targetTicket.ticketNo;
-        uint8 ticketStatus = targetTicket.status;
-        return (ticketNo, ticketStatus);
+    ) public returns (uint, uint8) {
+        require(
+            lottery_no <= (lotteryNoCalculator()),
+            "Lottery you are requesting has not started yet"
+        );
+        require(
+            ticketNosArray[msg.sender].length >= i,
+            "You don`t have that many tickets"
+        );
+        // Ticket memory targetTicket;
+        // targetTicket = tickets[msg.sender][lottery_no][i];
+        // uint ticketNo = targetTicket.ticketNo;
+        // uint8 ticketStatus = targetTicket.status; // DELETABLE
+
+        uint ticketNum = ticketNosArray[msg.sender][i - 1];
+        uint8 status = ticketsFromOutside[ticketNum].status;
+        return (ticketNum, status);
     }
-
-
 
     function getLastOwnedTicketNo(
         uint lottery_no
     ) public view returns (uint, uint8) {
-     require(tickets[msg.sender][lottery_no].length > 0, "You don`t have any tickets");
-uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
-        return (
-            tickets[msg.sender][lottery_no][lastIndex].ticketNo,
-            tickets[msg.sender][lottery_no][lastIndex].status
+        require(
+            ticketNosArray[msg.sender].length > 0,
+            "You don`t have any tickets"
         );
+        uint lastOwnedTicketNo;
+
+        // DO BINARY SEARCH HERE ya da LOTTERY TICKETLARININ EN BASINDAKINDEN HESAPLA
+        for (uint i = 0; i < ticketNosArray[msg.sender].length; i++) {
+            if (
+                ticketsFromOutside[ticketNosArray[msg.sender][i]].lotteryNo <=
+                lottery_no
+            ) {
+                continue;
+            } else {
+                lastOwnedTicketNo = ticketNosArray[msg.sender][i - 1];
+            }
+            return (
+                lastOwnedTicketNo,
+                ticketsFromOutside[lastOwnedTicketNo].status
+            );
+        }
+
+        // uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
+        // return (
+        //     tickets[msg.sender][lottery_no][lastIndex].ticketNo,
+        //     tickets[msg.sender][lottery_no][lastIndex].status
+        // ); // DELETABLE
     }
 
     function getTicketInfo(uint ticket_number) public {
         (uint lottery_no, uint index) = findTicketInfosFromNo(ticket_number);
 
+        // emit TicketInfo(
+        //     tickets[msg.sender][lottery_no][index].ticketNo,
+        //     tickets[msg.sender][lottery_no][index].lotteryNo,
+        //     tickets[msg.sender][lottery_no][index].ticketHash,
+        //     tickets[msg.sender][lottery_no][index].status,
+        //     tickets[msg.sender][lottery_no][index].active,
+        //     tickets[msg.sender][lottery_no][index].ticketTier
+        // ); // DELETABLE
         emit TicketInfo(
-            tickets[msg.sender][lottery_no][index].ticketNo,
-            tickets[msg.sender][lottery_no][index].lotteryNo,
-            tickets[msg.sender][lottery_no][index].ticketHash,
-            tickets[msg.sender][lottery_no][index].status,
-            tickets[msg.sender][lottery_no][index].active,
-            tickets[msg.sender][lottery_no][index].ticketTier
+            ticketsFromOutside[ticket_number].ticketNo,
+            ticketsFromOutside[ticket_number].lotteryNo,
+            ticketsFromOutside[ticket_number].ticketHash,
+            ticketsFromOutside[ticket_number].status,
+            ticketsFromOutside[ticket_number].active,
+            ticketsFromOutside[ticket_number].ticketTier
         );
     }
 
@@ -278,7 +362,9 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
 
     function pickWinner(uint lottery_no) private {
         if (lotteryInfos[lottery_no].ticketNosInLottery.length < 3) {
-            revert("There is not enough ticket for picking winners, lottery is cancelled!");
+            revert(
+                "There is not enough ticket for picking winners, lottery is cancelled!"
+            );
             // TODO: make the tickets refundable here
         }
         if (lotteryInfos[lottery_no].winningTickets.length == 3) {
@@ -286,7 +372,6 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
             // TODO: make the tickets refundable here
         }
         require(lottery_no <= lotteryNoCalculator(), "Invalid lottery number!");
-
 
         uint numberofTickets = lotteryInfos[lottery_no]
             .ticketNosInLottery
@@ -313,10 +398,15 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
         uint thPrice,
         uint lottery_no
     ) public returns (uint) {
-
-        require(thPrice==1||thPrice==2||thPrice==3, "Invalid price type!");
+        require(
+            thPrice == 1 || thPrice == 2 || thPrice == 3,
+            "Invalid price type!"
+        );
         require(lottery_no <= lotteryNoCalculator(), "Invalid lottery number!");
-        require(lotteryInfos[lottery_no].winningTickets.length == 3, "There is no winning ticket selected yet!");
+        require(
+            lotteryInfos[lottery_no].winningTickets.length == 3,
+            "There is no winning ticket selected yet!"
+        );
         uint prize;
 
         uint winnerTicketNo = lotteryInfos[lottery_no].ticketNosInLottery[
@@ -405,9 +495,18 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
         uint i,
         uint lottery_no
     ) public returns (uint ticket_no, uint amount) {
-        require(lottery_no <= (lotteryNoCalculator()), "Lottery you are requesting has not started yet!" );
-        require(lotteryInfos[lottery_no].winningTickets.length == 3, "There is no winning ticket selected yet!");
-        require(i==1||i==2||i==3, "Invalid number of winning ticket!");
+        require(
+            lottery_no <= (lotteryNoCalculator()),
+            "Lottery you are requesting has not started yet!"
+        );
+        require(
+            lotteryInfos[lottery_no].winningTickets.length == 3,
+            "There is no winning ticket selected yet!"
+        );
+        require(
+            i == 1 || i == 2 || i == 3,
+            "Invalid number of winning ticket!"
+        );
         uint ticket_index = lotteryInfos[lottery_no].winningTickets[i - 1];
         ticket_no = lotteryInfos[lottery_no].ticketNosInLottery[ticket_index];
 
@@ -426,10 +525,22 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
         uint ticket_no
     ) public returns (uint) {
         //this requirement assures that the buyer is already allowed to check his ticket /buying phase is over because he has to wait until buying time is over
-        require(lottery_no <= (lotteryNoCalculator()), "Lottery you are requesting has not started yet!" );
-        require(ticket_no <= ticketNoCounter, "The ticket you are requesting does not exist" );
-        require(ticketsFromOutside[ticket_no].owner == msg.sender, "You are not the owner!");
-        require(ticketsFromOutside[ticket_no].status == 1, "You have not revealed the random number yet!");
+        require(
+            lottery_no <= (lotteryNoCalculator()),
+            "Lottery you are requesting has not started yet!"
+        );
+        require(
+            ticket_no <= ticketNoCounter,
+            "The ticket you are requesting does not exist"
+        );
+        require(
+            ticketsFromOutside[ticket_no].owner == msg.sender,
+            "You are not the owner!"
+        );
+        require(
+            ticketsFromOutside[ticket_no].status == 1,
+            "You have not revealed the random number yet!"
+        );
 
         //picks winners tickets if they haven`t been chosen before
         if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
@@ -477,28 +588,37 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
         ) {
             for (
                 uint index = 0;
-                index < tickets[msg.sender][lottery_no].length;
+                index < ticketNosArray[msg.sender].length;
                 index++
             ) {
-                if (
-                    tickets[msg.sender][lottery_no][index].ticketNo == ticket_no
-                ) {
+                if (ticketsFromOutside[ticket_no].ticketNo == ticket_no) {
                     return (lottery_no, index);
                 }
             }
         }
-    }
+    } // DELETABLE
 
     function collectTicketPrize(
         uint lottery_no,
         uint ticket_no
     ) public returns (uint) {
-        
-        require(lottery_no <= (lotteryNoCalculator()), "Lottery you are requesting has not started yet!" );
-        require(ticket_no <= ticketNoCounter, "The ticket you are requesting does not exist" );
+        require(
+            lottery_no <= (lotteryNoCalculator()),
+            "Lottery you are requesting has not started yet!"
+        );
+        require(
+            ticket_no <= ticketNoCounter,
+            "The ticket you are requesting does not exist"
+        );
         require(ticketsFromOutside[ticket_no].status == 1, "not revealed");
-        require(ticketsFromOutside[ticket_no].owner == msg.sender, "You are not the owner!");
-        require(lotteryInfos[lottery_no].winningTickets.length == 3, "Winners ticket have not been selected yet");
+        require(
+            ticketsFromOutside[ticket_no].owner == msg.sender,
+            "You are not the owner!"
+        );
+        require(
+            lotteryInfos[lottery_no].winningTickets.length == 3,
+            "Winners ticket have not been selected yet"
+        );
 
         if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
             pickWinner(lottery_no);
@@ -524,6 +644,8 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
         balance[msg.sender] += prize;
         return prize;
     }
+
+    //BELOW ARE GETTERS, SHOULD BE REMOVED TO OTHER CONTRACTS
 
     function getMoneyCollected() public view returns (uint amount) {
         return lotteryBalance;
@@ -574,10 +696,19 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
         uint ticket_no
     ) public view returns (uint) {
         // require(lottery_no <= (lotteryNoCalculator()), "Lottery you are requesting has not started yet!" );
-        require(ticket_no <= ticketNoCounter, "The ticket you are requesting does not exist" );
+        require(
+            ticket_no <= ticketNoCounter,
+            "The ticket you are requesting does not exist"
+        );
         require(ticketsFromOutside[ticket_no].status == 1, "not revealed");
-        require(ticketsFromOutside[ticket_no].owner == msg.sender, "You are not the owner!");
-        require(lotteryInfos[lottery_no].winningTickets.length == 3, "Winners ticket have not been selected yet");
+        require(
+            ticketsFromOutside[ticket_no].owner == msg.sender,
+            "You are not the owner!"
+        );
+        require(
+            lotteryInfos[lottery_no].winningTickets.length == 3,
+            "Winners ticket have not been selected yet"
+        );
         uint prize;
         for (uint i = 0; i < 3; i++) {
             if (
@@ -595,9 +726,13 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
         return lotteryInfos[lottery_no].ticketNosInLottery.length;
     }
 
-
-
-    function getTicketInfos(uint ticket_no) public view returns(address,uint,uint,bytes32,uint8,bool,TicketTier) {
+    function getTicketInfos(
+        uint ticket_no
+    )
+        public
+        view
+        returns (address, uint, uint, bytes32, uint8, bool, TicketTier)
+    {
         return (
             ticketsFromOutside[ticket_no].owner,
             ticketsFromOutside[ticket_no].ticketNo,
@@ -609,17 +744,17 @@ uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
         );
     }
 
-    function getOwner(uint ticket_no) public view returns(address) {
+    function getOwner(uint ticket_no) public view returns (address) {
         return ticketsFromOutside[ticket_no].owner;
     }
 
-    function ticketNosInLotteryGetter(uint lottery_no) public view returns (uint[] memory) {
+    function ticketNosInLotteryGetter(
+        uint lottery_no
+    ) public view returns (uint[] memory) {
         return lotteryInfos[lottery_no].ticketNosInLottery;
     }
 
-    function hashOfANum(uint num) public view returns(bytes32) {
+    function hashOfANum(uint num) public view returns (bytes32) {
         return keccak256(abi.encodePacked(msg.sender, num));
-
     }
-
 }
