@@ -128,6 +128,27 @@ describe("Lock", function () {
    
 
     });
+    it("collectTicketPrize reverts", async function () {
+      // COMPLETED
+      const existingIthWinningTicket = 1;
+      const nonExistingIthWinningTicket = 5;
+      const existingLotteryNumber = 1;
+      const nonExistingLotteryNumber = 6;
+      await Lottery.connect(accounts[1]).depositEther({ value: 10 * 10 ** 10 });
+      await Lottery.connect(accounts[1]).buyTicket("0x1364421c30895d0949d8f03614ad49766d67b19169eea8ec69551b7559a1539c", 2);
+      await Lottery.connect(accounts[1]).buyTicket("0x1364421c30895d0949d8f03614ad49766d67b19169eea8ec69551b7559a1539c", 2);
+      await Lottery.connect(accounts[1]).buyTicket("0x1364421c30895d0949d8f03614ad49766d67b19169eea8ec69551b7559a1539c", 2);
+      await Lottery.connect(accounts[1]).buyTicket("0x1364421c30895d0949d8f03614ad49766d67b19169eea8ec69551b7559a1539c", 2);
+      await Lottery.connect(accounts[1]).buyTicket("0x1364421c30895d0949d8f03614ad49766d67b19169eea8ec69551b7559a1539c", 2);
+
+      await time.increase(WEEK_IN_SECS + 1000);
+      await time.increase(WEEK_IN_SECS + 1000);
+
+      await expect(Lottery.connect(accounts[1]).getIthWinningTicket(existingIthWinningTicket, nonExistingLotteryNumber)).to.be.revertedWith("Lottery you are requesting has not started yet!");
+      await expect(Lottery.connect(accounts[1]).getIthWinningTicket(nonExistingIthWinningTicket, existingLotteryNumber)).to.be.revertedWith("Invalid number of winning ticket!");
+   
+
+    });
 
     xit("Should set the right unlockTime", async function () {
       const number = 3;

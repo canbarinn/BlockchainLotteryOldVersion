@@ -3,7 +3,8 @@ coverage
 coverage.json
 
 #Hardhat files
-cache
+*.cache
+*.json
 artifacts
 typechain
 .env
