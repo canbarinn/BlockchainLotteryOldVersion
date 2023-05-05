@@ -20,7 +20,7 @@ contract FinalLottery {
     mapping(address => uint[]) public ticketNosArray; //address => Ticketno
     // mapping(address => mapping(uint => Ticket[])) public tickets; //address => lotteryNo => Ticket // DELETABLE
     mapping(address => uint256) public balance;
-    mapping(uint => LotteryInfo) public lotteryInfos; //lotteryNo => LotteryInfo
+    mapping(uint => LotteryInfo) public lotteryInfos; 
     mapping(uint => uint) public moneyCollectedForEachLottery;
     mapping(uint => uint) public totalPrizeMoney;
     mapping(uint => Ticket) ticketsFromOutside;
@@ -235,10 +235,11 @@ contract FinalLottery {
         ticketsFromOutside[ticket_no].active = false;
     }
 
+//Todo this is not working right
     function getIthOwnedTicketNo(
         uint i,
         uint lottery_no
-    ) public view returns (uint, uint8) {
+    ) public view returns (uint, uint) {
         require(
             lottery_no <= (lotteryNoCalculator()),
             "Lottery has not started yet"
@@ -266,6 +267,7 @@ contract FinalLottery {
         );
         uint lastOwnedTicketNo;
 
+        //Todo this is not working does it?
         // DO BINARY SEARCH HERE ya da LOTTERY TICKETLARININ EN BASINDAKINDEN HESAPLA
         for (uint i = 0; i < ticketNosArray[msg.sender].length; i++) {
             if (
@@ -633,7 +635,18 @@ contract FinalLottery {
         balance[msg.sender] += prize;
         return prize;
     }
+//Todo we have to change the name to getTotalLotteryMoneyCollected
+    function getLotteryMoneyCollected(
+        uint lottery_no
+    ) public view returns (uint) {
+        return moneyCollectedForEachLottery[lottery_no];
+    }
 
+    function getLotteryNos(uint unixtimeinweek) public view returns (uint lottery_no) {
+        uint timePassed = unixtimeinweek - lotteryDeploymentTime;
+        uint lotteryNo = (timePassed / (60 * 60 * 24 * 7)) + 1;
+        return lotteryNo;
+    }
     //BELOW ARE GETTERS, SHOULD BE REMOVED TO OTHER CONTRACTS
 
     function getMoneyCollected() public view returns (uint amount) {
@@ -645,12 +658,8 @@ contract FinalLottery {
     ) public view returns (uint amount) {
         return totalPrizeMoney[lottery_no];
     }
+    
 
-    function getLotteryMoneyCollected(
-        uint lottery_no
-    ) public view returns (uint) {
-        return moneyCollectedForEachLottery[lottery_no];
-    }
 
     function getWinningTicket1(uint lottery_no) public view returns (uint) {
         return (
