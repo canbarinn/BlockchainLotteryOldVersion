@@ -24,10 +24,6 @@ declare module "hardhat/types/runtime" {
       name: "Lock",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Lock__factory>;
-    getContractFactory(
-      name: "DALottery",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.DALottery__factory>;
 
     getContractAt(
       name: "FinalLottery",
@@ -44,11 +40,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Lock>;
-    getContractAt(
-      name: "DALottery",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.DALottery>;
 
     // default types
     getContractFactory(

@@ -7,7 +7,7 @@ import "hardhat-gas-reporter";
 const config: HardhatUserConfig = {
   solidity: "0.8.18",
   gasReporter: {
-    enabled: true
+    enabled: false
   },
   networks: {
     hardhat: {

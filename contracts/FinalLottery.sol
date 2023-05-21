@@ -17,8 +17,7 @@ contract FinalLottery {
         Invalid
     }
 
-    mapping(address => uint[]) public ticketNosArray; //address => Ticketno
-    // mapping(address => mapping(uint => Ticket[])) public tickets; //address => lotteryNo => Ticket // DELETABLE
+    mapping(address => uint[]) public ticketNosArray; 
     mapping(address => uint256) public balance;
     mapping(uint => LotteryInfo) public lotteryInfos; 
     mapping(uint => uint) public moneyCollectedForEachLottery;
@@ -30,16 +29,16 @@ contract FinalLottery {
         uint ticketNo;
         uint lotteryNo;
         bytes32 ticketHash;
-        uint8 status; //revealed or not
-        bool active; //Todo Can will add modifier to that
-        TicketTier ticketTier; //0 = full ticket, 1 = half ticket, 2 = quarter ticket
+        uint8 status; 
+        bool active; 
+        TicketTier ticketTier; 
     }
 
     struct LotteryInfo {
         uint lotteryNo;
         uint startTimestamp;
-        uint[] winningTickets; // safes index of the three winning tickets //0 = first price, 1 = second price, 2 = third price
-        uint[] ticketNosInLottery; //
+        uint[] winningTickets;
+        uint[] ticketNosInLottery; 
     }
 
     function findLotteryNoFromTicketNo(uint ticket_no) public returns (uint) {
@@ -81,19 +80,15 @@ contract FinalLottery {
     }
 
     function depositEther() public payable {
-        // amountu cikar
         balance[msg.sender] += msg.value;
-
-        // console.log(msg.value);
-        // console.log(balance[msg.sender]);
     }
 
-    function transferAmount(uint lottery_no, uint prize) public {
-        totalPrizeMoney[lottery_no] += prize;
+    function transferAmount(uint lottery_no, uint prize) private {
         require(
             moneyCollectedForEachLottery[lottery_no] >= prize,
             "Lottery is invalid, because there is not enough money in the Lottery for the prizes"
         );
+        totalPrizeMoney[lottery_no] += prize;
         uint transferAmnt = moneyCollectedForEachLottery[lottery_no] - prize;
         moneyCollectedForEachLottery[lottery_no + 1] += transferAmnt;
     }
@@ -129,10 +124,8 @@ contract FinalLottery {
             ticketTier = TicketTier.Full;
         }
 
-        // We have to check if the lottery before has already picked a winner when we buy tickets in the next round, not sure with indexing if it has to be -1 or -2
         if (lottery_no >= 3) {
             if (!(lotteryInfos[lottery_no - 2].winningTickets.length == 3)) {
-                //picks the winner for the lottery before
                 pickWinner(lottery_no - 2);
                 totalPrizeMoney[lottery_no - 2] = calculateTotalPriceValue(
                     lottery_no - 2
@@ -140,18 +133,6 @@ contract FinalLottery {
                 transferAmount(lottery_no - 2, totalPrizeMoney[lottery_no - 2]);
             }
         }
-
-        // tickets[msg.sender][lottery_no].push(
-        //     Ticket(
-        //         msg.sender,
-        //         ticketNoCounter,
-        //         lottery_no,
-        //         hash_rnd_number,
-        //         0,
-        //         true,
-        //         ticketTier
-        //     )
-        // ); //DELETABLE
 
         ticketsFromOutside[ticketNoCounter].owner = msg.sender;
         ticketsFromOutside[ticketNoCounter].ticketNo = ticketNoCounter;
@@ -161,7 +142,6 @@ contract FinalLottery {
         ticketsFromOutside[ticketNoCounter].active = true;
         ticketsFromOutside[ticketNoCounter].ticketTier = ticketTier;
 
-        //Todo this gives error
         ticketNosArray[msg.sender].push(ticketNoCounter);
         balance[msg.sender] -= getamount(ticketTier);
         lotteryBalance += getamount(ticketTier);
@@ -170,7 +150,6 @@ contract FinalLottery {
     }
 
     function revealRndNumber(uint ticket_no, uint random_number) public {
-        // require(lotteryNoCounter > 1, "early");
         require(
             ticket_no <= ticketNoCounter,
             "There is no ticket with this number in the system"
@@ -189,10 +168,8 @@ contract FinalLottery {
             "Sorry, you have already revealed"
         );
         bytes32 hash = keccak256(abi.encodePacked(msg.sender, random_number));
-        (uint lottery_no, uint index) = findTicketInfosFromNo(ticket_no);
         if (hash == ticketsFromOutside[ticket_no].ticketHash) {
             ticketsFromOutside[ticket_no].status = 1;
-            // tickets[msg.sender][lottery_no][index].status = 1; // DELETABLE
         } else {
             revert("Incorrect number!");
         }
@@ -231,15 +208,13 @@ contract FinalLottery {
         balance[msg.sender] += amount;
         moneyCollectedForEachLottery[lottery_no] -= amount;
         lotteryBalance -= amount;
-        // tickets[msg.sender][lottery_no][ticket_index].active = false; // DELETABLE
         ticketsFromOutside[ticket_no].active = false;
     }
 
-//Todo this is not working right
     function getIthOwnedTicketNo(
         uint i,
         uint lottery_no
-    ) public view returns (uint, uint) {
+    ) public view returns (uint, uint8) {
         require(
             lottery_no <= (lotteryNoCalculator()),
             "Lottery has not started yet"
@@ -248,14 +223,16 @@ contract FinalLottery {
             ticketNosArray[msg.sender].length >= i,
             "You don`t have that many tickets"
         );
-        // Ticket memory targetTicket;
-        // targetTicket = tickets[msg.sender][lottery_no][i];
-        // uint ticketNo = targetTicket.ticketNo;
-        // uint8 ticketStatus = targetTicket.status; // DELETABLE
 
-        uint ticketNum = ticketNosArray[msg.sender][i - 1];
-        uint8 status = ticketsFromOutside[ticketNum].status;
-        return (ticketNum, status);
+        for(uint k=0 ; k<ticketNosArray[msg.sender].length;k++) {
+            if(ticketsFromOutside[ticketNosArray[msg.sender][k]].lotteryNo == lottery_no) {
+                return (ticketsFromOutside[ticketNosArray[msg.sender][k+i-1]].ticketNo,ticketsFromOutside[ticketNosArray[msg.sender][k+i-1]].status );
+            }
+            else {
+                continue;
+            }
+        
+    }
     }
 
     function getLastOwnedTicketNo(
@@ -267,8 +244,6 @@ contract FinalLottery {
         );
         uint lastOwnedTicketNo;
 
-        //Todo this is not working does it?
-        // DO BINARY SEARCH HERE ya da LOTTERY TICKETLARININ EN BASINDAKINDEN HESAPLA
         for (uint i = 0; i < ticketNosArray[msg.sender].length; i++) {
             if (
                 ticketsFromOutside[ticketNosArray[msg.sender][i]].lotteryNo <=
@@ -283,82 +258,12 @@ contract FinalLottery {
                 ticketsFromOutside[lastOwnedTicketNo].status
             );
         }
-
-        // uint lastIndex = tickets[msg.sender][lottery_no].length - 1;
-        // return (
-        //     tickets[msg.sender][lottery_no][lastIndex].ticketNo,
-        //     tickets[msg.sender][lottery_no][lastIndex].status
-        // ); // DELETABLE
     }
 
-    function getTicketInfo(uint ticket_number) public {
-        (uint lottery_no, uint index) = findTicketInfosFromNo(ticket_number);
-
-        // emit TicketInfo(
-        //     tickets[msg.sender][lottery_no][index].ticketNo,
-        //     tickets[msg.sender][lottery_no][index].lotteryNo,
-        //     tickets[msg.sender][lottery_no][index].ticketHash,
-        //     tickets[msg.sender][lottery_no][index].status,
-        //     tickets[msg.sender][lottery_no][index].active,
-        //     tickets[msg.sender][lottery_no][index].ticketTier
-        // ); // DELETABLE
-        emit TicketInfo(
-            ticketsFromOutside[ticket_number].ticketNo,
-            ticketsFromOutside[ticket_number].lotteryNo,
-            ticketsFromOutside[ticket_number].ticketHash,
-            ticketsFromOutside[ticket_number].status,
-            ticketsFromOutside[ticket_number].active,
-            ticketsFromOutside[ticket_number].ticketTier
-        );
-    }
 
     function getRandomNumber() internal view returns (uint) {
         return uint(keccak256(abi.encodePacked(block.timestamp)));
-    }
-
-    // function pickWinner(uint lottery_no) private {
-    //     if (lotteryInfos[lottery_no].ticketNosInLottery.length <= 3) {
-    //         revert("not enough tickets");
-    //         // TODO: make the tickets refundable here
-    //     }
-    //     uint numberofTickets = lotteryInfos[lottery_no]
-    //         .ticketNosInLottery
-    //         .length;
-    //     uint index1 = getRandomNumber() %
-    //         lotteryInfos[lottery_no].ticketNosInLottery.length;
-    //     uint index2 = getRandomNumber() %
-    //         lotteryInfos[lottery_no].ticketNosInLottery.length;
-    //     uint index3 = getRandomNumber() %
-    //         lotteryInfos[lottery_no].ticketNosInLottery.length;
-
-    //     while ((index1 == index2) || (index2 == index3) || (index1 == index3)) {
-    //         if (index1 == index2) {
-    //             if (index1 != numberofTickets - 1) {
-    //                 index1 = index2 + 1;
-    //             } else {
-    //                 index1 = 0;
-    //             }
-    //         } else if (index2 == index3) {
-    //             if (index2 != numberofTickets - 1) {
-    //                 index2 = index3 + 1;
-    //             } else {
-    //                 index2 = 0;
-    //             }
-    //         } else if (index1 == index3) {
-    //             if (index1 != numberofTickets - 1) {
-    //                 index1 = index3 + 1;
-    //             } else {
-    //                 index1 = 0;
-    //         }
-    //             }
-    //         lotteryInfos[lottery_no].winningTickets.push(index1);
-    //         lotteryInfos[lottery_no].winningTickets.push(index2);
-    //         lotteryInfos[lottery_no].winningTickets.push(index3);
-
-    //     }
-
-    //     totalPrizeMoney[lottery_no] = calculateTotalPriceValue(lottery_no);
-    // }
+    }     
 
     function pickWinner(uint lottery_no) private {
         if (lotteryInfos[lottery_no].ticketNosInLottery.length < 3) {
@@ -383,7 +288,7 @@ contract FinalLottery {
         lotteryInfos[lottery_no].winningTickets.push(index2);
         lotteryInfos[lottery_no].winningTickets.push(index3);
 
-        // totalPrizeMoney[lottery_no] += calculateTotalPriceValue(lottery_no);
+        totalPrizeMoney[lottery_no] += calculateTotalPriceValue(lottery_no);
     }
 
     /**
@@ -392,16 +297,13 @@ contract FinalLottery {
     function calculateSinglePriceValue(
         uint thPrice,
         uint lottery_no
-    ) public returns (uint) {
+    ) private returns (uint) {
+        // TODO: This can be private
         require(
             thPrice == 1 || thPrice == 2 || thPrice == 3,
             "Invalid price type!"
         );
         require(lottery_no <= lotteryNoCalculator(), "Invalid lottery number!");
-        require(
-            lotteryInfos[lottery_no].winningTickets.length == 3,
-            "There is no winning ticket selected yet!"
-        );
         uint prize;
 
         uint winnerTicketNo = lotteryInfos[lottery_no].ticketNosInLottery[
@@ -411,54 +313,45 @@ contract FinalLottery {
             if (
                 ticketsFromOutside[winnerTicketNo].ticketTier == TicketTier.Full
             ) {
-                //prize = lotteryBalance / 2;
                 prize = moneyCollectedForEachLottery[lottery_no] / 2;
             } else if (
                 ticketsFromOutside[winnerTicketNo].ticketTier == TicketTier.Half
             ) {
-                //prize = lotteryBalance / 4;
                 prize = moneyCollectedForEachLottery[lottery_no] / 4;
             } else if (
                 ticketsFromOutside[winnerTicketNo].ticketTier ==
                 TicketTier.Quarter
             ) {
-                //prize = moneyCollectedForEachLottery[lottery_no] / 8;
                 prize = moneyCollectedForEachLottery[lottery_no] / 8;
             }
         } else if (thPrice == 2) {
             if (
                 ticketsFromOutside[winnerTicketNo].ticketTier == TicketTier.Full
             ) {
-                //prize = moneyCollectedForEachLottery[lottery_no] / 4;
                 prize = moneyCollectedForEachLottery[lottery_no] / 4;
             } else if (
                 ticketsFromOutside[winnerTicketNo].ticketTier == TicketTier.Half
             ) {
-                //prize = moneyCollectedForEachLottery[lottery_no] / 8;
                 prize = moneyCollectedForEachLottery[lottery_no] / 8;
             } else if (
                 ticketsFromOutside[winnerTicketNo].ticketTier ==
                 TicketTier.Quarter
             ) {
-                //prize = moneyCollectedForEachLottery[lottery_no] / 16;
                 prize = moneyCollectedForEachLottery[lottery_no] / 16;
             }
         } else if (thPrice == 3) {
             if (
                 ticketsFromOutside[winnerTicketNo].ticketTier == TicketTier.Full
             ) {
-                //prize = moneyCollectedForEachLottery[lottery_no] / 8;
                 prize = moneyCollectedForEachLottery[lottery_no] / 8;
             } else if (
                 ticketsFromOutside[winnerTicketNo].ticketTier == TicketTier.Half
             ) {
-                //prize = moneyCollectedForEachLottery[lottery_no] / 16;
                 prize = moneyCollectedForEachLottery[lottery_no] / 16;
             } else if (
                 ticketsFromOutside[winnerTicketNo].ticketTier ==
                 TicketTier.Quarter
             ) {
-                //prize = moneyCollectedForEachLottery[lottery_no] / 32;
                 prize = moneyCollectedForEachLottery[lottery_no] / 32;
             }
         } else {
@@ -471,8 +364,8 @@ contract FinalLottery {
     /**
     this function calculates the total value of the winners tickets in a specifiv lottery, has to be substracted from the total lottery balance when
      */
-    //needs more requirements, for example if the winners tickets have been determined
     function calculateTotalPriceValue(uint lottery_no) private returns (uint) {
+
         uint firstprice = calculateSinglePriceValue(1, lottery_no);
         uint secondprice = calculateSinglePriceValue(2, lottery_no);
         uint thirdprice = calculateSinglePriceValue(3, lottery_no);
@@ -538,8 +431,6 @@ contract FinalLottery {
             "You have not revealed the random number yet!"
         );
 
-        //picks winners tickets if they haven`t been chosen before
-
         uint prize;
         bool boolean;
         string memory prizeName;
@@ -565,13 +456,12 @@ contract FinalLottery {
         emit Winner(boolean);
 
         return prize;
-        //ToDo Add won prize to users balance
     }
 
     /**
     This function transferes the leftover Money (substracted by the Price Money) to the actual round, is called in BuyTicket() and
      */
-    function findTicketInfosFromNo(uint ticket_no) public returns (uint, uint) {
+    function findTicketInfosFromNo(uint ticket_no) public view returns (uint, uint) {
         uint lotteryNoCounter = lotteryNoCalculator();
         for (
             uint lottery_no = 0;
@@ -612,10 +502,11 @@ contract FinalLottery {
         );
         if (!(lotteryInfos[lottery_no].winningTickets.length == 3)) {
             pickWinner(lottery_no);
+            //
             totalPrizeMoney[lottery_no] = calculateTotalPriceValue(lottery_no);
             transferAmount(lottery_no, totalPrizeMoney[lottery_no]);
         }
-
+        uint prize;
         uint prizeIndex;
         for (uint i = 0; i < 3; i++) {
             if (
@@ -624,135 +515,27 @@ contract FinalLottery {
                 ] == ticket_no
             ) {
                 prizeIndex = i;
+                prize = calculateSinglePriceValue(prizeIndex + 1, lottery_no);
                 break; // Exit the loop if the ticket is found
             }
         }
-
-        uint prize = calculateSinglePriceValue(prizeIndex + 1, lottery_no);
+        
+       
 
         lotteryBalance -= prize;
         moneyCollectedForEachLottery[lottery_no] -= prize;
         balance[msg.sender] += prize;
         return prize;
     }
-//Todo we have to change the name to getTotalLotteryMoneyCollected
-    function getLotteryMoneyCollected(
-        uint lottery_no
-    ) public view returns (uint) {
-        return moneyCollectedForEachLottery[lottery_no];
-    }
 
-    function getLotteryNos(uint unixtimeinweek) public view returns (uint lottery_no) {
-        uint timePassed = unixtimeinweek - lotteryDeploymentTime;
-        uint lotteryNo = (timePassed / (60 * 60 * 24 * 7)) + 1;
-        return lotteryNo;
-    }
     //BELOW ARE GETTERS, SHOULD BE REMOVED TO OTHER CONTRACTS
 
-    function getMoneyCollected() public view returns (uint amount) {
-        return lotteryBalance;
-    }
-
-    function getTotalPrizeMoney(
-        uint lottery_no
-    ) public view returns (uint amount) {
-        return totalPrizeMoney[lottery_no];
-    }
-    
-
-
-    function getWinningTicket1(uint lottery_no) public view returns (uint) {
-        return (
-            lotteryInfos[lottery_no].ticketNosInLottery[
-                lotteryInfos[lottery_no].winningTickets[0]
-            ]
-        );
-    }
-
-    function getWinningTicket2(uint lottery_no) public view returns (uint) {
-        return (
-            lotteryInfos[lottery_no].ticketNosInLottery[
-                lotteryInfos[lottery_no].winningTickets[0]
-            ]
-        );
-    }
-
-    function getWinningTicket3(uint lottery_no) public view returns (uint) {
-        return (
-            lotteryInfos[lottery_no].ticketNosInLottery[
-                lotteryInfos[lottery_no].winningTickets[0]
-            ]
-        );
-    }
-
-    function getBalance() public view returns (uint) {
-        return balance[msg.sender];
-    }
-
-    function getTicketPrize(
-        uint lottery_no,
-        uint ticket_no
-    ) public view returns (uint) {
-        // require(lottery_no <= (lotteryNoCalculator()), "Lottery you are requesting has not started yet!" );
-        require(
-            ticket_no <= ticketNoCounter,
-            "The ticket you are requesting does not exist"
-        );
-        require(ticketsFromOutside[ticket_no].status == 1, "not revealed");
-        require(
-            ticketsFromOutside[ticket_no].owner == msg.sender,
-            "You are not the owner!"
-        );
-        require(
-            lotteryInfos[lottery_no].winningTickets.length == 3,
-            "Winners ticket have not been selected yet"
-        );
-        uint prize;
-        for (uint i = 0; i < 3; i++) {
-            if (
-                lotteryInfos[lottery_no].ticketNosInLottery[
-                    lotteryInfos[lottery_no].winningTickets[i]
-                ] == ticket_no
-            ) {
-                prize = (i + 1) * 500000;
-            }
-        }
-        return prize;
-    }
-
-    function ticketCount(uint lottery_no) public view returns (uint) {
-        return lotteryInfos[lottery_no].ticketNosInLottery.length;
-    }
-
-    function getTicketInfos(
-        uint ticket_no
-    )
-        public
-        view
-        returns (address, uint, uint, bytes32, uint8, bool, TicketTier)
-    {
-        return (
-            ticketsFromOutside[ticket_no].owner,
-            ticketsFromOutside[ticket_no].ticketNo,
-            ticketsFromOutside[ticket_no].lotteryNo,
-            ticketsFromOutside[ticket_no].ticketHash,
-            ticketsFromOutside[ticket_no].status,
-            ticketsFromOutside[ticket_no].active,
-            ticketsFromOutside[ticket_no].ticketTier
-        );
-    }
-
-    function getOwner(uint ticket_no) public view returns (address) {
-        return ticketsFromOutside[ticket_no].owner;
-    }
-
-    function ticketNosInLotteryGetter(
-        uint lottery_no
-    ) public view returns (uint[] memory) {
-        return lotteryInfos[lottery_no].ticketNosInLottery;
-    }
 
     function hashOfANum(uint num) public view returns (bytes32) {
         return keccak256(abi.encodePacked(msg.sender, num));
+    }
+
+function getBalance() public view returns (uint) {
+        return balance[msg.sender];
     }
 }
