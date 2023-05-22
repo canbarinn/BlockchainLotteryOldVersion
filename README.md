@@ -57,7 +57,7 @@ This Repo gives a briefly insight about our implementation of an autonomous dece
 
 ### Documentation
 
-You can download the documentation [here](https://github.com/canbarinn/BlockchainLotteryOldVersion/blob/main/Documentation.docx)
+You can download the documentation [here](https://github.com/canbarinn/BlockchainLotteryOldVersion/raw/main/Documentation.docx)
 
 ### Built With
 
